@@ -9,3 +9,12 @@ module.config(function(pluginManagerProvider) {
     'link': 'assets'
   });
 });
+
+module.controller('AssetsController', function() {
+  this.assets = []
+
+  this.openAssetModal = function() {
+
+  };
+
+});

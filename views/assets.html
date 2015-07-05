@@ -1,1 +1,30 @@
-<h1>Assets</h1>
+<div ng-show="assets.assets" class="scroll" ng-controller="AssetsController as assets">
+    <div ng-repeat="asset in assets.assets" ng-click="assets.openAssetModal(asset)"
+         class="row collapse last-transactions-content">
+        <div class="small-1 columns text-center">
+            <i class="icon-circle-active size-10" ng-style="{'color':index.backgroundColor}" style="margin-top:8px;"></i>
+            &nbsp;
+        </div>
+        <div class="small-4 columns">
+            <div ng-if="!$root.updatingBalance">
+                <span class="text-bold size-16">{{ asset.metadata.assetName }}</span>
+            </div>
+            <div class="ellipsis text-gray size-14">
+                {{ asset.metadata.description }}
+            </div>
+        </div>
+        <div class="small-2 columns">
+          <span class="size-16">
+            {{ asset.amount }} unit{{ asset.metadata.amount != 1 ? 's' : '' }}
+          </span>
+        </div>
+        <div class="small-4 columns">
+            <span class="size-14"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>
+        </div>
+        <div class="small-1 columns text-right">
+            <br>
+            <i class="icon-arrow-right3 size-18"></i>
+        </div>
+    </div>
+</div>
+<div class="extra-margin-bottom"></div>
