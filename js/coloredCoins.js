@@ -80,10 +80,4 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   });
 };
 
-ColoredCoins.prototype.getMenuItemName = function() {
-  return {
-    'title': 'Assets',
-    'icon': 'icon-pricetag',
-    'link': 'assets'
-  };
-};
+module.exports.ColoredCoins = new ColoredCoins;

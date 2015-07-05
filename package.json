@@ -1,0 +1,31 @@
+{
+  "name": "colored-copay",
+  "version": "0.1.0",
+  "description": "Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support for [Colored Coins](http://coloredcoins.org).",
+  "main": "js/colored-copay.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/troggy/colored-copay.git"
+  },
+  "author": "Kosta Korenkov <7r0ggy@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/troggy/colored-copay/issues"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-concat": "^0.5.1",
+    "html2js": "~0.2.0"
+  }
+}

@@ -6,7 +6,7 @@
     "Kosta Korenkov <7r0ggy@gmail.com>"
   ],
   "description": "Colored Coins support for Copay wallet",
-  "main": "js/colored-copay.js",
+  "main": "dist/copayColoredCoins.js",
   "keywords": [
     "copay",
     "wallet",
