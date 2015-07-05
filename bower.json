@@ -1,0 +1,26 @@
+{
+  "name": "colored-copay",
+  "version": "0.1.0",
+  "homepage": "https://github.com/troggy/colored-copay",
+  "authors": [
+    "Kosta Korenkov <7r0ggy@gmail.com>"
+  ],
+  "description": "Colored Coins support for Copay wallet",
+  "main": "js/colored-copay.js",
+  "keywords": [
+    "copay",
+    "wallet",
+    "coloredcoins",
+    "assets"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": ">=1.2.0"
+  }
+}
