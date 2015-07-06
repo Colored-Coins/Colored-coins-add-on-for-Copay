@@ -1,22 +1,24 @@
 'use strict';
 
 function ColoredCoins($http, $log) {
-  var apiHost = 'testnet.api.coloredcoins.org',
+  var apiHost = 'localhost:8000',
       self = this;
 
+  this.log = log = $log;
+
   this.handleResponse = function (data, status, cb) {
-    $log.debug('Status: ', status);
-    $log.debug('Body: ', JSON.stringify(data));
+    log.debug('Status: ', status);
+    log.debug('Body: ', JSON.stringify(data));
 
     if (status != 200 && status != 201) {
       return cb(data);
     }
-    return cb(null, body);
+    return cb(null, data);
   };
 
   this.getFrom = function (api_endpoint, param, cb) {
-    $log.debug('Get from:' + api_endpoint + '/' + param);
-    $http.get('http://' + apiHost + ':80/v2/' + api_endpoint + '/' + param)
+    log.debug('Get from:' + api_endpoint + '/' + param);
+    $http.get('http://' + apiHost + '/v2/' + api_endpoint + '/' + param)
         .success(function (data, status) {
           return self.handleResponse(data, status, cb);
         })
@@ -63,11 +65,11 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   this.getAssetsByAddress(address, function(err, assetsInfo) {
     if (err) { return cb(err); }
 
-    $log.debug("Assets for " + address + ": \n" + JSON.stringify(assetsInfo));
+    self.log.debug("Assets for " + address + ": \n" + JSON.stringify(assetsInfo));
 
     var assets = [];
     assetsInfo.forEach(function(asset) {
-      self.getMetadata(asset.assetId, asset.utxo, function(err, metadata) {
+      self.getMetadata(asset, function(err, metadata) {
         metadata.amount = asset.amount;
         assets.push({ asset: asset, metadata: metadata });
         if (assetsInfo.length == assets.length) {
@@ -78,4 +80,6 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   });
 };
 
-angular.module('copayPlugin.coloredCoins').service('coloredCoins', ColoredCoins);
+angular.module('copayPlugin.coloredCoins').service('coloredCoins', function($http, $log) {
+  return new ColoredCoins($http, $log);
+});
