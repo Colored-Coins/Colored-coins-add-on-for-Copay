@@ -4,7 +4,9 @@ function ColoredCoins($http, $log) {
   var apiHost = 'localhost:8000',
       self = this;
 
-  this.log = log = $log;
+  var log = $log;
+
+  this.log = $log;
 
   this.handleResponse = function (data, status, cb) {
     log.debug('Status: ', status);
@@ -80,6 +82,4 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   });
 };
 
-angular.module('copayPlugin.coloredCoins').service('coloredCoins', function($http, $log) {
-  return new ColoredCoins($http, $log);
-});
+angular.module('copayPlugin.coloredCoins').service('coloredCoins', ColoredCoins);
