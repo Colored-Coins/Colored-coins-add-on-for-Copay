@@ -4,6 +4,7 @@
   "description": "Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support for [Colored Coins](http://coloredcoins.org).",
   "main": "js/copayColoredCoins.js",
   "scripts": {
+    "start": "node server/apiProxy.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
