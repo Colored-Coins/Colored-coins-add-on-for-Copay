@@ -11,12 +11,3 @@ module.config(function(pluginManagerProvider) {
 
   pluginManagerProvider.registerView('assets', 'assets', 'colored-copay/views/assets.html')
 });
-
-module.controller('AssetsController', function() {
-  this.assets = []
-
-  this.openAssetModal = function() {
-
-  };
-
-});

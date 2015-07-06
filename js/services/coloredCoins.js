@@ -1,9 +1,7 @@
 'use strict';
 
-function ColoredCoins(config, $injector) {
+function ColoredCoins($http, $log) {
   var apiHost = 'testnet.api.coloredcoins.org',
-      $http = $injector.get('$http'),
-      $log = $injector.get('$log'),
       self = this;
 
   this.handleResponse = function (data, status, cb) {
@@ -80,4 +78,4 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   });
 };
 
-module.exports.ColoredCoins = new ColoredCoins;
+angular.module('copayColoredCoins').service('coloredCoins', ColoredCoins);
