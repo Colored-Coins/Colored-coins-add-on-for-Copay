@@ -78,4 +78,4 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   });
 };
 
-angular.module('copayColoredCoins').service('coloredCoins', ColoredCoins);
+angular.module('copayPlugin.coloredCoins').service('coloredCoins', ColoredCoins);

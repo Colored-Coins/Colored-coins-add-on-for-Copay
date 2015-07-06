@@ -1,18 +1,18 @@
 {
-  "name": "colored-copay",
+  "name": "copay-colored-coins-plugin",
   "version": "0.1.0",
   "description": "Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support for [Colored Coins](http://coloredcoins.org).",
-  "main": "js/colored-copay.js",
+  "main": "js/copayColoredCoins.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/troggy/colored-copay.git"
+    "url": "git://github.com/troggy/copay-colored-coins-plugin.git"
   },
   "author": "Kosta Korenkov <7r0ggy@gmail.com>",
   "bugs": {
-    "url": "https://github.com/troggy/colored-copay/issues"
+    "url": "https://github.com/troggy/copay-colored-coins-plugin/issues"
   },
   "ignore": [
     "**/.*",

@@ -13,8 +13,10 @@ module.exports = function (grunt) {
       },
       dist: {
         src: [
-          './dist/templates.js',
-          './js/**/*.js'
+          './js/copayColoredCoins.js',
+          './js/controllers/*.js',
+          './js/services/*.js',
+          './dist/templates.js'
         ],
         dest: './dist/copayColoredCoins.js'
       }
@@ -22,7 +24,9 @@ module.exports = function (grunt) {
     html2js: {
       app: {
         options: {
-          base: '../'
+          rename: function(moduleName) {
+            return 'colored-coins/' + moduleName.replace('../', '');
+          }
         },
         src: ['./views/{,*/}*.html'],
         dest: './dist/templates.js',

@@ -1,7 +1,7 @@
 {
-  "name": "colored-copay",
+  "name": "copay-colored-coins-plugin",
   "version": "0.1.0",
-  "homepage": "https://github.com/troggy/colored-copay",
+  "homepage": "https://github.com/troggy/copay-colored-coins-plugin",
   "authors": [
     "Kosta Korenkov <7r0ggy@gmail.com>"
   ],
