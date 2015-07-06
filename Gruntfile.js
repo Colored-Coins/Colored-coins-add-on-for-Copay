@@ -3,16 +3,18 @@
 module.exports = function (grunt) {
 
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-html2js');
 
   grunt.initConfig({
+    clean: ['./dist/templates.js'],
     concat: {
       options: {
       },
       dist: {
         src: [
-          './js/templates.js',
-          './js/colored-copay.js'
+          './dist/templates.js',
+          './js/**/*.js'
         ],
         dest: './dist/copayColoredCoins.js'
       }
@@ -23,7 +25,7 @@ module.exports = function (grunt) {
           base: '../'
         },
         src: ['./views/{,*/}*.html'],
-        dest: './js/templates.js',
+        dest: './dist/templates.js',
         module: 'copayAssetViewTemplates'
       }
     }
@@ -31,7 +33,8 @@ module.exports = function (grunt) {
 
   grunt.registerTask('default', [
     'html2js',
-    'concat'
+    'concat',
+    'clean'
   ]);
 
 };
