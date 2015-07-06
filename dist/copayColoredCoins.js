@@ -35,11 +35,14 @@ angular.module('copayPlugin.coloredCoins')
     });
 'use strict';
 
-function ColoredCoins($http, $log) {
-  var apiHost = 'localhost:8000',
-      self = this;
+function ColoredCoins(configService, $http, $log) {
+  var defaultConfig = {
+    apiHost: 'testnet.api.coloredcoins.org:80'
+  };
 
-  var log = $log;
+  var apiHost = (configService.getSync()['coloredCoins'] || defaultConfig)['apiHost'],
+      self = this,
+      log = $log;
 
   this.log = $log;
 
