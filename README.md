@@ -19,4 +19,8 @@ Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support 
     ````
     'bower_components/copay-colored-coins-plugin/dist/copayColoredCoins.js'
     ````
+4. Colored Coins API doesn't have CORS at the moment. To workaround this start API proxy:
 
+    ````
+    node bower_components/copay-colored-coins-plugin/server/apiProxy.js
+    ````
