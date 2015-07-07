@@ -22,7 +22,9 @@
     "test",
     "tests"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "http-proxy": "~1.11.1"
+  },
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-cli": "^0.1.13",
