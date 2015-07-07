@@ -5,7 +5,7 @@ Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support 
 1. In Copay instance folder:
 
     ````
-    bower install git@github.com:troggy/copay-colored-coins-plugin.git
+    bower install https://github.com/troggy/copay-colored-coins-plugin.git
     ````
 
 2. Add ``copayPlugin.coloredCoins`` module to as dependency of ``copayApp.plugins`` module:
