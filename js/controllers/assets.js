@@ -1,22 +1,37 @@
 'use strict';
 
 angular.module('copayPlugin.coloredCoins')
-    .controller('assetsController', function ($rootScope, coloredCoins) {
+    .controller('assetsController', function ($rootScope, $modal, coloredCoins) {
       var self = this;
 
       this.assets = [];
 
       $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
-        var updatedAssets = [];
+        self.assets = [];
         balance.byAddress.forEach(function (ba) {
           coloredCoins.getAssets(ba.address, function (assets) {
-            updatedAssets.push(assets);
+            self.assets = self.assets.concat(assets);
           })
         });
-        self.assets = updatedAssets
       });
 
 
-      this.openAssetModal = function () {
+      this.openAssetModal = function (asset) {
+        var ModalInstanceCtrl = function($scope, $modalInstance) {
+          $scope.asset = asset;
+          $scope.cancel = function() {
+            $modalInstance.dismiss('cancel');
+          };
+        };
+        var modalInstance = $modal.open({
+          templateUrl: 'colored-coins/views/modals/asset-details.html',
+          windowClass: 'full animated slideInUp',
+          controller: ModalInstanceCtrl,
+        });
+
+        modalInstance.result.finally(function() {
+          var m = angular.element(document.getElementsByClassName('reveal-modal'));
+          m.addClass('slideOutDown');
+        });
       };
     });

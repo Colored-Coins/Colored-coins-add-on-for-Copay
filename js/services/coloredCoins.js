@@ -75,10 +75,9 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
     var assets = [];
     assetsInfo.forEach(function(asset) {
       self.getMetadata(asset, function(err, metadata) {
-        metadata.amount = asset.amount;
-        assets.push({ asset: asset, metadata: metadata });
+        assets.push({ asset: asset, amount: asset.amount, metadata: metadata });
         if (assetsInfo.length == assets.length) {
-          return cb(metadata);
+          return cb(assets);
         }
       });
     });

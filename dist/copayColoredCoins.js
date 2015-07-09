@@ -14,25 +14,49 @@ module.config(function(pluginManagerProvider) {
 'use strict';
 
 angular.module('copayPlugin.coloredCoins')
-    .controller('assetsController', function ($rootScope, coloredCoins) {
+    .controller('assetsController', function ($rootScope, $modal, coloredCoins) {
       var self = this;
 
       this.assets = [];
 
       $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
-        var updatedAssets = [];
+        self.assets = [];
         balance.byAddress.forEach(function (ba) {
           coloredCoins.getAssets(ba.address, function (assets) {
-            updatedAssets.push(assets);
+            self.assets = self.assets.concat(assets);
           })
         });
-        self.assets = updatedAssets
       });
 
 
-      this.openAssetModal = function () {
+      this.openAssetModal = function (asset) {
+        var ModalInstanceCtrl = function($scope, $modalInstance) {
+          $scope.asset = asset;
+          $scope.cancel = function() {
+            $modalInstance.dismiss('cancel');
+          };
+        };
+        var modalInstance = $modal.open({
+          templateUrl: 'colored-coins/views/modals/asset-details.html',
+          windowClass: 'full animated slideInUp',
+          controller: ModalInstanceCtrl,
+        });
+
+        modalInstance.result.finally(function() {
+          var m = angular.element(document.getElementsByClassName('reveal-modal'));
+          m.addClass('slideOutDown');
+        });
       };
     });
+'use strict';
+
+angular.module('copayPlugin.coloredCoins')
+  .filter('stringify', function($sce) {
+    return function(json) {
+      json = json || [];
+      return $sce.trustAsHtml(JSON.stringify(json, null, 4).replace(/\n/g, '<br>'));
+    }
+  });
 'use strict';
 
 function ColoredCoins(configService, $http, $log) {
@@ -110,10 +134,9 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
     var assets = [];
     assetsInfo.forEach(function(asset) {
       self.getMetadata(asset, function(err, metadata) {
-        metadata.amount = asset.amount;
-        assets.push({ asset: asset, metadata: metadata });
+        assets.push({ asset: asset, amount: asset.amount, metadata: metadata });
         if (assetsInfo.length == assets.length) {
-          return cb(metadata);
+          return cb(assets);
         }
       });
     });
@@ -122,7 +145,7 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
 
 angular.module('copayPlugin.coloredCoins').service('coloredCoins', ColoredCoins);
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/modals/asset-details.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
@@ -130,31 +153,80 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "    <div ng-repeat=\"asset in assets.assets\" ng-click=\"assets.openAssetModal(asset)\"\n" +
     "         class=\"row collapse last-transactions-content\">\n" +
     "        <div class=\"small-1 columns text-center\">\n" +
-    "            <i class=\"icon-circle-active size-10\" ng-style=\"{'color':index.backgroundColor}\" style=\"margin-top:8px;\"></i>\n" +
+    "            <i class=\"icon-pricetag size-24\" style=\"margin-top:8px;\"></i>\n" +
     "            &nbsp;\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
     "            <div ng-if=\"!$root.updatingBalance\">\n" +
-    "                <span class=\"text-bold size-16\">{{ asset.metadata.assetName }}</span>\n" +
+    "                <span class=\"text-bold size-16\">{{ asset.metadata.data.assetName }}</span>\n" +
     "            </div>\n" +
     "            <div class=\"ellipsis text-gray size-14\">\n" +
-    "                {{ asset.metadata.description }}\n" +
+    "                {{ asset.metadata.data.description }}\n" +
     "            </div>\n" +
     "        </div>\n" +
     "        <div class=\"small-2 columns\">\n" +
     "          <span class=\"size-16\">\n" +
-    "            {{ asset.amount }} unit{{ asset.metadata.amount != 1 ? 's' : '' }}\n" +
+    "            {{ asset.amount }} unit{{ asset.amount != 1 ? 's' : '' }}\n" +
     "          </span>\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
-    "            <span class=\"size-14\"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>\n" +
+    "            <span class=\"size-14\"><span translate>Issued by</span>: {{ asset.metadata.data.issuer }}</span>\n" +
     "        </div>\n" +
     "        <div class=\"small-1 columns text-right\">\n" +
-    "            <br>\n" +
     "            <i class=\"icon-arrow-right3 size-18\"></i>\n" +
     "        </div>\n" +
     "    </div>\n" +
     "</div>\n" +
     "<div class=\"extra-margin-bottom\"></div>\n" +
     "");
+}]);
+
+angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/modals/asset-details.html",
+    "<nav class=\"tab-bar\">\n" +
+    "    <section class=\"left-small\">\n" +
+    "        <a ng-click=\"cancel()\">\n" +
+    "            <i class=\"icon-arrow-left3 icon-back\"></i>\n" +
+    "            <span class=\"text-back\" translate>Back</span>\n" +
+    "        </a>\n" +
+    "    </section>\n" +
+    "    <section class=\"middle tab-bar-section\">\n" +
+    "        <h1 class=\"title ellipsis\" ng-style=\"{'color':color}\" translate>\n" +
+    "            Asset\n" +
+    "        </h1>\n" +
+    "    </section>\n" +
+    "</nav>\n" +
+    "\n" +
+    "<div class=\"modal-content\">\n" +
+    "    <div class=\"header-modal text-center\">\n" +
+    "        <div class=\"size-42\">\n" +
+    "            {{ asset.metadata.data.assetName }}\n" +
+    "        </div>\n" +
+    "        <div class=\"size-18 m5t text-gray\" ng-show=\"btx.alternativeAmount\">\n" +
+    "            {{ asset.metadata.data.description }}\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "\n" +
+    "    <h4 class=\"title m0\" translate>Details</h4>\n" +
+    "    <ul class=\"no-bullet size-14 m0\">\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Amount</span>:\n" +
+    "    <span class=\"right\">\n" +
+    "      <time>{{ asset.amount }}</time>\n" +
+    "    </span>\n" +
+    "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Issuer</span>:\n" +
+    "    <span class=\"right\">\n" +
+    "      {{ asset.metadata.data.issuer }}\n" +
+    "    </span>\n" +
+    "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Raw metadata</span>:\n" +
+    "            <pre class=\"right\" ng-bind-html=\"asset.metadata | stringify\"></pre>\n" +
+    "        </li>\n" +
+    "    </ul>\n" +
+    "\n" +
+    "    <div class=\"extra-margin-bottom\"></div>\n" +
+    "</div>");
 }]);

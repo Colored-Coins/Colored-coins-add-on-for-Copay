@@ -15,6 +15,7 @@ module.exports = function (grunt) {
         src: [
           './js/copayColoredCoins.js',
           './js/controllers/*.js',
+          './js/filters/*.js',
           './js/services/*.js',
           './dist/templates.js'
         ],
