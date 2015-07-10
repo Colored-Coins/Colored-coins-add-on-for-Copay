@@ -15,7 +15,6 @@ angular.module('copayPlugin.coloredCoins')
         });
       });
 
-
       this.openAssetModal = function (asset) {
         var ModalInstanceCtrl = function($scope, $modalInstance) {
           $scope.asset = asset;

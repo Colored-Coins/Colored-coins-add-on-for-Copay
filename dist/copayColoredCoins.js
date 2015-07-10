@@ -2,14 +2,19 @@
 
 var module = angular.module('copayPlugin.coloredCoins', ['copayAssetViewTemplates']);
 
-module.config(function(pluginManagerProvider) {
-  pluginManagerProvider.registerMenuItem({
-    'title': 'Assets',
-    'icon': 'icon-pricetag',
-    'link': 'assets'
+module.config(function(addonManagerProvider) {
+  addonManagerProvider.registerAddon({
+    menuItem: {
+      'title': 'Assets',
+      'icon': 'icon-pricetag',
+      'link': 'assets'
+    },
+    view: {
+      id: 'assets',
+      'class': 'assets',
+      template: 'colored-coins/views/assets.html'
+    }
   });
-
-  pluginManagerProvider.registerView('assets', 'assets', 'colored-coins/views/assets.html')
 });
 'use strict';
 
@@ -27,7 +32,6 @@ angular.module('copayPlugin.coloredCoins')
           })
         });
       });
-
 
       this.openAssetModal = function (asset) {
         var ModalInstanceCtrl = function($scope, $modalInstance) {
