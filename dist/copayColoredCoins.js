@@ -1,6 +1,6 @@
 
 
-var module = angular.module('copayPlugin.coloredCoins', ['copayAssetViewTemplates']);
+var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates']);
 
 module.config(function(addonManagerProvider) {
   addonManagerProvider.registerAddon({
@@ -18,7 +18,7 @@ module.config(function(addonManagerProvider) {
 });
 'use strict';
 
-angular.module('copayPlugin.coloredCoins')
+angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $modal, coloredCoins) {
       var self = this;
 
@@ -54,7 +54,7 @@ angular.module('copayPlugin.coloredCoins')
     });
 'use strict';
 
-angular.module('copayPlugin.coloredCoins')
+angular.module('copayAddon.coloredCoins')
   .filter('stringify', function($sce) {
     return function(json) {
       json = json || [];
@@ -147,7 +147,7 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   });
 };
 
-angular.module('copayPlugin.coloredCoins').service('coloredCoins', ColoredCoins);
+angular.module('copayAddon.coloredCoins').service('coloredCoins', ColoredCoins);
 
 angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/modals/asset-details.html']);
 

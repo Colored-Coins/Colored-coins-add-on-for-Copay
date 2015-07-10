@@ -84,4 +84,4 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
   });
 };
 
-angular.module('copayPlugin.coloredCoins').service('coloredCoins', ColoredCoins);
+angular.module('copayAddon.coloredCoins').service('coloredCoins', ColoredCoins);

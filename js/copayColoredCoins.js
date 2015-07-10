@@ -1,6 +1,6 @@
 
 
-var module = angular.module('copayPlugin.coloredCoins', ['copayAssetViewTemplates']);
+var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates']);
 
 module.config(function(addonManagerProvider) {
   addonManagerProvider.registerAddon({

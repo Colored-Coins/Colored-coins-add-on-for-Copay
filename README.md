@@ -8,10 +8,10 @@ Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support 
     bower install https://github.com/troggy/copay-colored-coins-plugin.git
     ````
 
-2. Add ``copayPlugin.coloredCoins`` module to as dependency of ``copayApp.plugins`` module:
+2. Add ``copayAddon.coloredCoins`` module to as dependency of ``copayApp.addons`` module:
 
      ````
-     angular.module('copayApp.plugins', ['copayPlugin.coloredCoins']);
+     angular.module('copayApp.addons', ['copayAddon.coloredCoins']);
      ````
 
 3. Update Copay's Gruntfile. Add the following under ``concat.angular.src``:

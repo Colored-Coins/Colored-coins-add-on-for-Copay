@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('copayPlugin.coloredCoins')
+angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $modal, coloredCoins) {
       var self = this;
 

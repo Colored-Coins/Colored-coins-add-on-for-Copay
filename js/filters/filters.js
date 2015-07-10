@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('copayPlugin.coloredCoins')
+angular.module('copayAddon.coloredCoins')
   .filter('stringify', function($sce) {
     return function(json) {
       json = json || [];
