@@ -138,7 +138,7 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
     var assets = [];
     assetsInfo.forEach(function(asset) {
       self.getMetadata(asset, function(err, metadata) {
-        assets.push({ asset: asset, amount: asset.amount, metadata: metadata });
+        assets.push({ address: address, asset: asset, metadata: metadata });
         if (assetsInfo.length == assets.length) {
           return cb(assets);
         }
@@ -170,7 +170,7 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "        </div>\n" +
     "        <div class=\"small-2 columns\">\n" +
     "          <span class=\"size-16\">\n" +
-    "            {{ asset.amount }} unit{{ asset.amount != 1 ? 's' : '' }}\n" +
+    "            {{ asset.asset.amount }} unit{{ asset.asset.amount != 1 ? 's' : '' }}\n" +
     "          </span>\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
@@ -216,7 +216,7 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "        <li class=\"line-b p10 oh\">\n" +
     "            <span class=\"text-gray\" translate>Amount</span>:\n" +
     "    <span class=\"right\">\n" +
-    "      <time>{{ asset.amount }}</time>\n" +
+    "      <time>{{ asset.asset.amount }}</time>\n" +
     "    </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
