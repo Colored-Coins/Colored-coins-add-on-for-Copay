@@ -1,6 +1,6 @@
 'use strict';
 
-function ColoredCoins(configService, $http, $log) {
+function ColoredCoins(configService, $http, $log, bitcore) {
   var defaultConfig = {
     apiHost: 'testnet.api.coloredcoins.org:80'
   };
@@ -31,6 +31,18 @@ function ColoredCoins(configService, $http, $log) {
           return self.handleResponse(data, status, cb);
         });
   };
+
+  this.postTo = function(api_endpoint, json_data, cb) {
+    $log.debug('Post to:' + api_endpoint + ". Data: " + JSON.stringify(json_data));
+    $http.post('http://' + apiHost + '/v2/' + api_endpoint, json_data)
+        .success(function (data, status) {
+          return self.handleResponse(data, status, cb);
+        })
+        .error(function(data, status) {
+          return self.handleResponse(data, status, cb);
+        });
+  };
+
 
   this.extractAssets = function(body) {
     var assets = [];
@@ -81,6 +93,41 @@ ColoredCoins.prototype.getAssets = function(address, cb) {
         }
       });
     });
+  });
+};
+
+ColoredCoins.prototype.transferAsset = function(asset, amount, to, txIn, numSigsRequired) {
+
+  var transfer = {
+    from: asset.address,
+    fee: 1000,
+    to: [{
+      "address": to,
+      "amount": amount,
+      "assetId": asset.asset.assetId
+    }],
+    financeOutput: {
+      value: txIn.satoshis,
+      n: txIn.vout,
+      scriptPubKey: {
+        asm: new bitcore.Script(txIn.scriptPubKey).toString(),
+        hex: txIn.scriptPubKey,
+        type: 'scripthash',
+        reqSigs: numSigsRequired
+        //addresses: []
+      }
+    },
+    financeOutputTxid: txIn.txid
+  };
+  console.log(transfer);
+
+  this.postTo('sendasset', transfer, function (err, body) {
+    if (err) {
+      console.log('error: ', err);
+      return;
+    }
+
+    console.log(body.txHex);
   });
 };
 
