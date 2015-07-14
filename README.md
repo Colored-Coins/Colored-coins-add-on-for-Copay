@@ -32,11 +32,16 @@ Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support 
     node bower_components/copay-colored-coins-plugin/server/apiProxy.js
     ````
     
-    and add the following to Copay config (change <HOST> to the host you are running server at):
+    and add the following to Copay config:
     
     ````
     coloredCoins: {
-      apiHost: '<HOST>:8000'
+      apiHost: 'localhost:8000'
     },
     ````
     
+5. Rebuild Copay:
+
+    ````
+    grunt
+    ````
