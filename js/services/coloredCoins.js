@@ -1,6 +1,6 @@
 'use strict';
 
-function ColoredCoins(configService, $http, $log, bitcore) {
+function ColoredCoins(configService, $http, $log, bitcore, lodash) {
   var defaultConfig = {
     apiHost: 'testnet.api.coloredcoins.org:80'
   };
@@ -48,7 +48,7 @@ function ColoredCoins(configService, $http, $log, bitcore) {
     body.utxos.forEach(function(utxo) {
       if (utxo.assets || utxo.assets.length > 0) {
         utxo.assets.forEach(function(asset) {
-          assets.push({ assetId: asset.assetId, amount: asset.amount, utxo: utxo.txid + ':' + utxo.index });
+          assets.push({ assetId: asset.assetId, amount: asset.amount, utxo: lodash.pick(utxo, [ 'txid', 'index', 'value', 'scriptPubKey']) });
         });
       }
     });
@@ -57,7 +57,7 @@ function ColoredCoins(configService, $http, $log, bitcore) {
   };
 
   var getMetadata = function(asset, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo, function(err, body){
+    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, function(err, body){
       if (err) { return cb(err); }
       return cb(null, body.metadataOfIssuence);
     });
@@ -90,7 +90,11 @@ function ColoredCoins(configService, $http, $log, bitcore) {
     });
   };
 
-  root.transferAsset = function(asset, amount, to, txIn, numSigsRequired) {
+  root.broadcastTx = function(txHex, cb) {
+    postTo('broadcast', { txHex: txHex }, cb);
+  };
+
+  root.createTransferTx = function(asset, amount, to, txIn, numSigsRequired, cb) {
 
     var transfer = {
       from: asset.address,
@@ -100,29 +104,26 @@ function ColoredCoins(configService, $http, $log, bitcore) {
         "amount": amount,
         "assetId": asset.asset.assetId
       }],
+      flags: {
+        injectPreviousOutput: true
+      },
       financeOutput: {
         value: txIn.satoshis,
         n: txIn.vout,
         scriptPubKey: {
           asm: new bitcore.Script(txIn.scriptPubKey).toString(),
           hex: txIn.scriptPubKey,
-          type: 'scripthash',
+          type: 'scripthash', // not sure we can hardcode this
           reqSigs: numSigsRequired
           //addresses: []
         }
       },
       financeOutputTxid: txIn.txid
     };
-    console.log(transfer);
 
-    postTo('sendasset', transfer, function (err, body) {
-      if (err) {
-        console.log('error: ', err);
-        return;
-      }
+    console.log(JSON.stringify(transfer, null, 2));
 
-      console.log(body.txHex);
-    });
+    postTo('sendasset', transfer, cb);
   };
 
   return root;

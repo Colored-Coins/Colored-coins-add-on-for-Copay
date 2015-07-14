@@ -18,23 +18,31 @@ module.config(function(addonManagerProvider) {
 });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, coloredCoins, gettext, profileService) {
+angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
   var self = this;
 
   this.assets = [];
 
+  var addressToPath = {};
+  var txidToUTXO = {};
+
   $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
     self.assets = [];
+    addressToPath = lodash.reduce(balance.byAddress, function(result, n) { result[n.address] = n.path; return result; }, {});
     //self.setOngoingProcess(gettext('Getting assets'));
     balance.byAddress.forEach(function (ba) {
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
+        lodash.each(assets, function(a) {
+          txidToUTXO[a.asset.utxo.txid] = a.asset.utxo;
+          txidToUTXO[a.asset.utxo.txid].path = addressToPath[ba.address];
+        });
         //self.setOngoingProcess();
       })
     });
   });
 
-  this.setTransferError = function(err) {
+  var setTransferError = function(err) {
     var fc = profileService.focusedClient;
     $log.warn(err);
     var errMessage =
@@ -51,10 +59,14 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
     }, 1);
   };
 
+  var handleTransferError = function(err) {
+    profileService.lockFC();
+    return setTransferError(err);
+  };
 
   var submitTransfer = function(asset, transfer, form) {
-    console.log(asset);
-    console.log(transfer);
+    $log.debug("Asset: " + asset);
+    $log.debug("Transfer: " + transfer);
 
     var fc = profileService.focusedClient;
 
@@ -91,10 +103,33 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
           return setTransferError(err);
         }
 
-        console.log(txp);
+        $log.debug(txp);
+
+        // save UTXO information from Transaction Proposal
+        lodash.each(txp.inputs, function(i) {
+          txidToUTXO[i.txid] = { txid: i.txid, path: i.path, index: i.vout, value: i.satoshis,
+            publicKeys: i.publicKeys,
+            scriptPubKey: { hex: i.scriptPubKey, reqSigs: txp.requiredSignatures } };
+        });
+
+        $log.debug("UTXOs: " + JSON.stringify(txidToUTXO));
 
         fc.removeTxProposal(txp, function(err, txpb) {
-          coloredCoins.transferAsset(asset, amount, address, txp.inputs[0], txp.requiredSignatures);
+          if (err) { return handleTransferError(err); }
+
+          coloredCoins.createTransferTx(asset, amount, address, txp.inputs[0], txp.requiredSignatures, function(err, result) {
+            if (err) { return handleTransferError(err); }
+
+            var tx = new bitcore.Transaction(result.txHex);
+            $log.debug(JSON.stringify(tx.toObject(), null, 2));
+
+            externalTxSigner.sign(tx, fc.credentials, txidToUTXO);
+
+            coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
+              if (err) { return handleTransferError(err); }
+              $log.debug(body);
+            });
+          });
         });
       });
     }, 100);
@@ -153,7 +188,7 @@ angular.module('copayAddon.coloredCoins')
   });
 'use strict';
 
-function ColoredCoins(configService, $http, $log, bitcore) {
+function ColoredCoins(configService, $http, $log, bitcore, lodash) {
   var defaultConfig = {
     apiHost: 'testnet.api.coloredcoins.org:80'
   };
@@ -201,7 +236,7 @@ function ColoredCoins(configService, $http, $log, bitcore) {
     body.utxos.forEach(function(utxo) {
       if (utxo.assets || utxo.assets.length > 0) {
         utxo.assets.forEach(function(asset) {
-          assets.push({ assetId: asset.assetId, amount: asset.amount, utxo: utxo.txid + ':' + utxo.index });
+          assets.push({ assetId: asset.assetId, amount: asset.amount, utxo: lodash.pick(utxo, [ 'txid', 'index', 'value', 'scriptPubKey']) });
         });
       }
     });
@@ -210,7 +245,7 @@ function ColoredCoins(configService, $http, $log, bitcore) {
   };
 
   var getMetadata = function(asset, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo, function(err, body){
+    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, function(err, body){
       if (err) { return cb(err); }
       return cb(null, body.metadataOfIssuence);
     });
@@ -243,7 +278,11 @@ function ColoredCoins(configService, $http, $log, bitcore) {
     });
   };
 
-  root.transferAsset = function(asset, amount, to, txIn, numSigsRequired) {
+  root.broadcastTx = function(txHex, cb) {
+    postTo('broadcast', { txHex: txHex }, cb);
+  };
+
+  root.createTransferTx = function(asset, amount, to, txIn, numSigsRequired, cb) {
 
     var transfer = {
       from: asset.address,
@@ -253,29 +292,26 @@ function ColoredCoins(configService, $http, $log, bitcore) {
         "amount": amount,
         "assetId": asset.asset.assetId
       }],
+      flags: {
+        injectPreviousOutput: true
+      },
       financeOutput: {
         value: txIn.satoshis,
         n: txIn.vout,
         scriptPubKey: {
           asm: new bitcore.Script(txIn.scriptPubKey).toString(),
           hex: txIn.scriptPubKey,
-          type: 'scripthash',
+          type: 'scripthash', // not sure we can hardcode this
           reqSigs: numSigsRequired
           //addresses: []
         }
       },
       financeOutputTxid: txIn.txid
     };
-    console.$log(transfer);
 
-    postTo('sendasset', transfer, function (err, body) {
-      if (err) {
-        console.$log('error: ', err);
-        return;
-      }
+    console.log(JSON.stringify(transfer, null, 2));
 
-      console.$log(body.txHex);
-    });
+    postTo('sendasset', transfer, cb);
   };
 
   return root;
@@ -284,6 +320,60 @@ function ColoredCoins(configService, $http, $log, bitcore) {
 
 angular.module('copayAddon.coloredCoins').service('coloredCoins', ColoredCoins);
 
+
+angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(lodash, bitcore) {
+  var root = {};
+
+  function ExternalTxSigner(credentials, txidToUTXO) {
+
+    this.derivePrivKeys = function(xPriv, network, tx) {
+      var derived = {};
+      var xpriv = new bitcore.HDPrivateKey(xPriv, network).derive("m/45'");
+      for (var i = 0; i < tx.inputs.length; i++) {
+        var path = txidToUTXO[tx.inputs[i].toObject().prevTxId].path;
+        if (!derived[path]) {
+          derived[path] = xpriv.derive(path).privateKey;
+        }
+      }
+      return derived;
+    };
+
+    this.convertInputsToP2SH = function(tx, derivedPrivKeys) {
+      var inputs = tx.inputs;
+      tx.inputs = [];
+      for (var i = 0; i < inputs.length; i++) {
+        var input = inputs[i];
+        var txid = input.toObject().prevTxId;
+        var utxo = txidToUTXO[txid];
+        var path = utxo.path;
+        var pubKey = derivedPrivKeys[path].publicKey;
+        var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
+        var from = {'txId': txid, outputIndex: utxo.index, satoshis: utxo.value, script: script };
+        tx.from(from, [pubKey], utxo.scriptPubKey.reqSigs);
+      }
+    };
+
+    this.sign = function(tx) {
+      //Derive proper key to sign, for each input
+      var derivedPrivKeys = this.derivePrivKeys(credentials.xPrivKey, credentials.network, tx);
+
+      this.convertInputsToP2SH(tx, derivedPrivKeys);
+
+      // sign each input
+      lodash.each(lodash.values(derivedPrivKeys), function(privKey) {
+        tx.sign(privKey);  //2NCLER6hbQYaTxP5fac5SuZvUFDRMc2RvLE
+      });
+    };
+
+  }
+
+  root.sign = function(tx, credentials, txidToUTXO) {
+    return new ExternalTxSigner(credentials, txidToUTXO).sign(tx);
+  };
+
+
+  return root;
+});
 angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/send.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
