@@ -296,7 +296,7 @@ function ColoredCoins(configService, $http, $log, bitcore, lodash) {
         injectPreviousOutput: true
       },
       financeOutput: {
-        value: txIn.satoshis,
+        value: bitcore.Unit.fromSatoshis(txIn.satoshis).BTC,
         n: txIn.vout,
         scriptPubKey: {
           asm: new bitcore.Script(txIn.scriptPubKey).toString(),
