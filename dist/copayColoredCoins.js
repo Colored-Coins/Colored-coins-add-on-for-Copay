@@ -442,8 +442,8 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "\n" +
     "    <div>\n" +
     "        <div class=\"text-center m20t\">\n" +
-    "            <button class=\"button outline round light-gray tiny\">\n" +
-    "                <span class=\"text-primary\" ng-click=\"openTransferModal(asset)\" translate>Transfer</span>\n" +
+    "            <button class=\"button outline round light-gray tiny\" ng-click=\"openTransferModal(asset)\">\n" +
+    "                <span class=\"text-primary\" translate>Transfer</span>\n" +
     "            </button>\n" +
     "        </div>\n" +
     "    </div>\n" +
