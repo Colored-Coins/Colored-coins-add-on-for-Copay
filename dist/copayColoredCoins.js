@@ -18,7 +18,7 @@ module.config(function(addonManagerProvider) {
 });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
+angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, $controller) {
   var self = this;
 
   this.assets = [];
@@ -127,7 +127,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
             coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
               if (err) { return handleTransferError(err); }
-              $log.debug(body);
+              $rootScope.$emit('Colored/TransferSent');
             });
           });
         });
@@ -138,6 +138,10 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
   this.openTransferModal = function(asset) {
     var ModalInstanceCtrl = function($scope, $modalInstance) {
       $scope.asset = asset;
+      $rootScope.$on('Colored/TransferSent', function() {
+        $scope.cancel();
+        $rootScope.$emit('NewOutgoingTx');
+      });
       $scope.transferAsset = function(transfer, form) {
         submitTransfer($scope.asset, transfer, form);
       };
