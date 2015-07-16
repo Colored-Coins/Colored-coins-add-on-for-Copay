@@ -1,14 +1,15 @@
+'use strict';
 
-angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(lodash, bitcore) {
+angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(lodash, bitcore, UTXOList) {
   var root = {};
 
-  function ExternalTxSigner(credentials, txidToUTXO) {
+  function ExternalTxSigner(credentials) {
 
     this.derivePrivKeys = function(xPriv, network, tx) {
       var derived = {};
       var xpriv = new bitcore.HDPrivateKey(xPriv, network).derive("m/45'");
       for (var i = 0; i < tx.inputs.length; i++) {
-        var path = txidToUTXO[tx.inputs[i].toObject().prevTxId].path;
+        var path = UTXOList.get(tx.inputs[i].toObject().prevTxId).path;
         if (!derived[path]) {
           derived[path] = xpriv.derive(path).privateKey;
         }
@@ -22,7 +23,7 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
       for (var i = 0; i < inputs.length; i++) {
         var input = inputs[i];
         var txid = input.toObject().prevTxId;
-        var utxo = txidToUTXO[txid];
+        var utxo = UTXOList.get(txid);
         var path = utxo.path;
         var pubKey = derivedPrivKeys[path].publicKey;
         var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
@@ -39,14 +40,14 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
 
       // sign each input
       lodash.each(lodash.values(derivedPrivKeys), function(privKey) {
-        tx.sign(privKey);  //2NCLER6hbQYaTxP5fac5SuZvUFDRMc2RvLE
+        tx.sign(privKey);
       });
     };
 
   }
 
-  root.sign = function(tx, credentials, txidToUTXO) {
-    return new ExternalTxSigner(credentials, txidToUTXO).sign(tx);
+  root.sign = function(tx, credentials) {
+    return new ExternalTxSigner(credentials).sign(tx);
   };
 
 

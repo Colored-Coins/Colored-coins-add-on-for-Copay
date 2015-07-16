@@ -1,12 +1,12 @@
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
+angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, UTXOList) {
   var self = this;
 
   this.assets = [];
+  this.error = '';
 
   var addressToPath = {};
-  var txidToUTXO = {};
 
   this.setOngoingProcess = function(name) {
     $rootScope.$emit('Addon/OngoingProcess', name);
@@ -20,8 +20,8 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
         lodash.each(assets, function(a) {
-          txidToUTXO[a.asset.utxo.txid] = a.asset.utxo;
-          txidToUTXO[a.asset.utxo.txid].path = addressToPath[ba.address];
+          a.asset.utxo.path = addressToPath[ba.address];
+          UTXOList.add(a.asset.utxo.txid, a.asset.utxo);
         });
         self.setOngoingProcess();
       })
@@ -94,12 +94,11 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
         // save UTXO information from Transaction Proposal
         lodash.each(txp.inputs, function(i) {
-          txidToUTXO[i.txid] = { txid: i.txid, path: i.path, index: i.vout, value: i.satoshis,
+          var utxo = { txid: i.txid, path: i.path, index: i.vout, value: i.satoshis,
             publicKeys: i.publicKeys,
             scriptPubKey: { hex: i.scriptPubKey, reqSigs: txp.requiredSignatures } };
+          UTXOList.add(i.txid, utxo);
         });
-
-        $log.debug("UTXOs: " + JSON.stringify(txidToUTXO));
 
         fc.removeTxProposal(txp, function(err, txpb) {
           if (err) { return handleTransferError(err); }
@@ -111,7 +110,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
             $log.debug(JSON.stringify(tx.toObject(), null, 2));
 
             self.setOngoingProcess(gettext('Signing transaction'));
-            externalTxSigner.sign(tx, fc.credentials, txidToUTXO);
+            externalTxSigner.sign(tx, fc.credentials);
 
             self.setOngoingProcess(gettext('Broadcasting transaction'));
             coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {

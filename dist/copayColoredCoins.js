@@ -18,13 +18,13 @@ module.config(function(addonManagerProvider) {
 });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
+angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, UTXOList) {
   var self = this;
 
   this.assets = [];
+  this.error = '';
 
   var addressToPath = {};
-  var txidToUTXO = {};
 
   this.setOngoingProcess = function(name) {
     $rootScope.$emit('Addon/OngoingProcess', name);
@@ -38,8 +38,8 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
         lodash.each(assets, function(a) {
-          txidToUTXO[a.asset.utxo.txid] = a.asset.utxo;
-          txidToUTXO[a.asset.utxo.txid].path = addressToPath[ba.address];
+          a.asset.utxo.path = addressToPath[ba.address];
+          UTXOList.add(a.asset.utxo.txid, a.asset.utxo);
         });
         self.setOngoingProcess();
       })
@@ -112,12 +112,11 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
         // save UTXO information from Transaction Proposal
         lodash.each(txp.inputs, function(i) {
-          txidToUTXO[i.txid] = { txid: i.txid, path: i.path, index: i.vout, value: i.satoshis,
+          var utxo = { txid: i.txid, path: i.path, index: i.vout, value: i.satoshis,
             publicKeys: i.publicKeys,
             scriptPubKey: { hex: i.scriptPubKey, reqSigs: txp.requiredSignatures } };
+          UTXOList.add(i.txid, utxo);
         });
-
-        $log.debug("UTXOs: " + JSON.stringify(txidToUTXO));
 
         fc.removeTxProposal(txp, function(err, txpb) {
           if (err) { return handleTransferError(err); }
@@ -129,7 +128,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
             $log.debug(JSON.stringify(tx.toObject(), null, 2));
 
             self.setOngoingProcess(gettext('Signing transaction'));
-            externalTxSigner.sign(tx, fc.credentials, txidToUTXO);
+            externalTxSigner.sign(tx, fc.credentials);
 
             self.setOngoingProcess(gettext('Broadcasting transaction'));
             coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
@@ -198,6 +197,22 @@ angular.module('copayAddon.coloredCoins')
       return $sce.trustAsHtml(JSON.stringify(json, null, 4).replace(/\n/g, '<br>'));
     }
   });
+'use strict';
+
+angular.module('copayAddon.coloredCoins').service('UTXOList', function() {
+  var root = {},
+      txidToUTXO = {};
+
+  root.add = function(txid, utxo) {
+    txidToUTXO[txid] = utxo;
+  };
+
+  root.get = function(txid) {
+    return txidToUTXO[txid];
+  };
+
+  return root;
+});
 'use strict';
 
 function ColoredCoins(configService, $http, $log, bitcore, lodash) {
@@ -332,17 +347,18 @@ function ColoredCoins(configService, $http, $log, bitcore, lodash) {
 
 angular.module('copayAddon.coloredCoins').service('coloredCoins', ColoredCoins);
 
+'use strict';
 
-angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(lodash, bitcore) {
+angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(lodash, bitcore, UTXOList) {
   var root = {};
 
-  function ExternalTxSigner(credentials, txidToUTXO) {
+  function ExternalTxSigner(credentials) {
 
     this.derivePrivKeys = function(xPriv, network, tx) {
       var derived = {};
       var xpriv = new bitcore.HDPrivateKey(xPriv, network).derive("m/45'");
       for (var i = 0; i < tx.inputs.length; i++) {
-        var path = txidToUTXO[tx.inputs[i].toObject().prevTxId].path;
+        var path = UTXOList.get(tx.inputs[i].toObject().prevTxId).path;
         if (!derived[path]) {
           derived[path] = xpriv.derive(path).privateKey;
         }
@@ -356,7 +372,7 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
       for (var i = 0; i < inputs.length; i++) {
         var input = inputs[i];
         var txid = input.toObject().prevTxId;
-        var utxo = txidToUTXO[txid];
+        var utxo = UTXOList.get(txid);
         var path = utxo.path;
         var pubKey = derivedPrivKeys[path].publicKey;
         var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
@@ -373,14 +389,14 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
 
       // sign each input
       lodash.each(lodash.values(derivedPrivKeys), function(privKey) {
-        tx.sign(privKey);  //2NCLER6hbQYaTxP5fac5SuZvUFDRMc2RvLE
+        tx.sign(privKey);
       });
     };
 
   }
 
-  root.sign = function(tx, credentials, txidToUTXO) {
-    return new ExternalTxSigner(credentials, txidToUTXO).sign(tx);
+  root.sign = function(tx, credentials) {
+    return new ExternalTxSigner(credentials).sign(tx);
   };
 
 
@@ -510,6 +526,7 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "    <div class=\"row m20t\">\n" +
     "        <div class=\"large-12 large-centered columns\">\n" +
     "            <form name=\"assetTransferForm\" ng-submit=\"transferAsset(transfer, assetTransferForm)\" ng-disabled=\"home.blockUx || home.onGoingProcess\" novalidate>\n" +
+    "                [{{error}}]\n" +
     "                <div class=\"box-notification\" ng-show=\"error\" ng-click=\"resetError()\">\n" +
     "                  <span class=\"text-warning\">\n" +
     "                    {{ error|translate }}\n" +
