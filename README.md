@@ -36,7 +36,10 @@ Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support 
     
     ````
     coloredCoins: {
-      apiHost: 'localhost:8000'
+      api: {
+        testnet: 'localhost:8000',
+        livenet: 'localhost:8100'
+      }
     },
     ````
     
