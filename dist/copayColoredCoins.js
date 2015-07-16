@@ -18,7 +18,7 @@ module.config(function(addonManagerProvider) {
 });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, $controller) {
+angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
   var self = this;
 
   this.assets = [];
@@ -26,10 +26,14 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
   var addressToPath = {};
   var txidToUTXO = {};
 
+  this.setOngoingProcess = function(name) {
+    $rootScope.$emit('Addon/OngoingProcess', name);
+  };
+
   $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
     self.assets = [];
     addressToPath = lodash.reduce(balance.byAddress, function(result, n) { result[n.address] = n.path; return result; }, {});
-    //self.setOngoingProcess(gettext('Getting assets'));
+    self.setOngoingProcess(gettext('Getting assets'));
     balance.byAddress.forEach(function (ba) {
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
@@ -37,7 +41,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
           txidToUTXO[a.asset.utxo.txid] = a.asset.utxo;
           txidToUTXO[a.asset.utxo.txid].path = addressToPath[ba.address];
         });
-        //self.setOngoingProcess();
+        self.setOngoingProcess();
       })
     });
   });
@@ -61,6 +65,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
   var handleTransferError = function(err) {
     profileService.lockFC();
+    self.setOngoingProcess();
     return setTransferError(err);
   };
 
@@ -83,7 +88,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
       return;
     }
 
-    //self.setOngoingProcess(gettext('Getting transaction'));
+    self.setOngoingProcess(gettext('Selecting transaction inputs'));
     $timeout(function() {
       var address, amount;
 
@@ -98,7 +103,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         feePerKb: 1000
       }, function(err, txp) {
         if (err) {
-          //self.setOngoingProcess();
+          self.setOngoingProcess();
           profileService.lockFC();
           return setTransferError(err);
         }
@@ -116,15 +121,17 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
         fc.removeTxProposal(txp, function(err, txpb) {
           if (err) { return handleTransferError(err); }
-
+          self.setOngoingProcess(gettext('Creating transfer transaction'));
           coloredCoins.createTransferTx(asset, amount, address, txp.inputs[0], txp.requiredSignatures, function(err, result) {
             if (err) { return handleTransferError(err); }
 
             var tx = new bitcore.Transaction(result.txHex);
             $log.debug(JSON.stringify(tx.toObject(), null, 2));
 
+            self.setOngoingProcess(gettext('Signing transaction'));
             externalTxSigner.sign(tx, fc.credentials, txidToUTXO);
 
+            self.setOngoingProcess(gettext('Broadcasting transaction'));
             coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
               if (err) { return handleTransferError(err); }
               $rootScope.$emit('Colored/TransferSent');
@@ -142,6 +149,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         $scope.cancel();
         $rootScope.$emit('NewOutgoingTx');
       });
+      $scope.setOngoingProcess = self.setOngoingProcess;
       $scope.transferAsset = function(transfer, form) {
         submitTransfer($scope.asset, transfer, form);
       };

@@ -17,6 +17,7 @@ module.exports = function (grunt) {
           './js/controllers/*.js',
           './js/filters/*.js',
           './js/services/*.js',
+          './js/directives/*.js',
           './dist/templates.js'
         ],
         dest: './dist/copayColoredCoins.js'
