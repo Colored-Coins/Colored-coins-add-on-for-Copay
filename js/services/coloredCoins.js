@@ -1,19 +1,27 @@
 'use strict';
 
-function ColoredCoins(configService, $http, $log) {
+function ColoredCoins(profileService, configService, $http, $log, lodash) {
   var defaultConfig = {
-    apiHost: 'testnet.api.coloredcoins.org:80'
+    api: {
+      testnet: 'testnet.api.coloredcoins.org',
+      livenet: 'api.coloredcoins.org'
+    }
   };
 
-  var apiHost = (configService.getSync()['coloredCoins'] || defaultConfig)['apiHost'],
-      self = this,
-      log = $log;
+  var config = (configService.getSync()['coloredCoins'] || defaultConfig),
+      root = {};
 
-  this.log = $log;
+  var apiHost = function(network) {
+    if (!config['api'] || ! config['api'][network]) {
+      return defaultConfig.api[network];
+    } else {
+      return config.api[network];
+    }
+  };
 
-  this.handleResponse = function (data, status, cb) {
-    log.debug('Status: ', status);
-    log.debug('Body: ', JSON.stringify(data));
+  var handleResponse = function (data, status, cb) {
+    $log.debug('Status: ', status);
+    $log.debug('Body: ', JSON.stringify(data));
 
     if (status != 200 && status != 201) {
       return cb(data);
@@ -21,25 +29,25 @@ function ColoredCoins(configService, $http, $log) {
     return cb(null, data);
   };
 
-  this.getFrom = function (api_endpoint, param, cb) {
-    log.debug('Get from:' + api_endpoint + '/' + param);
-    $http.get('http://' + apiHost + '/v2/' + api_endpoint + '/' + param)
+  var getFrom = function (api_endpoint, param, network, cb) {
+    $log.debug('Get from:' + api_endpoint + '/' + param);
+    $http.get('http://' + apiHost(network) + '/v2/' + api_endpoint + '/' + param)
         .success(function (data, status) {
-          return self.handleResponse(data, status, cb);
+          return handleResponse(data, status, cb);
         })
         .error(function(data, status) {
-          return self.handleResponse(data, status, cb);
+          return handleResponse(data, status, cb);
         });
   };
 
-  this.extractAssets = function(body) {
+  var extractAssets = function(body) {
     var assets = [];
     if (!body.utxos || body.utxos.length == 0) return assets;
 
     body.utxos.forEach(function(utxo) {
       if (utxo.assets || utxo.assets.length > 0) {
         utxo.assets.forEach(function(asset) {
-          assets.push({ assetId: asset.assetId, amount: asset.amount, utxo: utxo.txid + ':' + utxo.index });
+          assets.push({ assetId: asset.assetId, amount: asset.amount, utxo: lodash.pick(utxo, [ 'txid', 'index', 'value', 'scriptPubKey']) });
         });
       }
     });
@@ -47,41 +55,43 @@ function ColoredCoins(configService, $http, $log) {
     return assets;
   };
 
-  this.getMetadata = function(asset, cb) {
-    this.getFrom('assetmetadata', asset.assetId + "/" + asset.utxo, function(err, body){
+  var getMetadata = function(asset, network, cb) {
+    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, body){
       if (err) { return cb(err); }
       return cb(null, body.metadataOfIssuence);
     });
   };
 
-  this.getAssetsByAddress = function(address, cb) {
-    this.getFrom('addressinfo', address, function(err, body) {
+  var getAssetsByAddress = function(address, network, cb) {
+    getFrom('addressinfo', address, network, function(err, body) {
       if (err) { return cb(err); }
-      return cb(null, self.extractAssets(body));
+      return cb(null, extractAssets(body));
     });
   };
 
-}
+  root.init = function() {};
 
-ColoredCoins.prototype.init = function() {};
+  root.getAssets = function(address, cb) {
+    var network = profileService.focusedClient.credentials.network;
+    getAssetsByAddress(address, network, function(err, assetsInfo) {
+      if (err) { return cb(err); }
 
-ColoredCoins.prototype.getAssets = function(address, cb) {
-  var self = this;
-  this.getAssetsByAddress(address, function(err, assetsInfo) {
-    if (err) { return cb(err); }
+      $log.debug("Assets for " + address + ": \n" + JSON.stringify(assetsInfo));
 
-    self.log.debug("Assets for " + address + ": \n" + JSON.stringify(assetsInfo));
-
-    var assets = [];
-    assetsInfo.forEach(function(asset) {
-      self.getMetadata(asset, function(err, metadata) {
-        assets.push({ address: address, asset: asset, metadata: metadata });
-        if (assetsInfo.length == assets.length) {
-          return cb(assets);
-        }
+      var assets = [];
+      assetsInfo.forEach(function(asset) {
+        getMetadata(asset, network, function(err, metadata) {
+          assets.push({ address: address, asset: asset, metadata: metadata });
+          if (assetsInfo.length == assets.length) {
+            return cb(assets);
+          }
+        });
       });
     });
-  });
-};
+  };
+
+  return root;
+}
+
 
 angular.module('copayAddon.coloredCoins').service('coloredCoins', ColoredCoins);
