@@ -131,7 +131,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
             if (err) { return handleTransferError(err); }
 
             $log.debug(txp);
-            console.log(txp);
 
             // save UTXO information from Transaction Proposal
             lodash.each(txp.inputs, function(i) {
@@ -224,7 +223,7 @@ angular.module('copayAddon.coloredCoins').service('UTXOList', function() {
 });
 'use strict';
 
-function ColoredCoins(profileService, configService, $http, $log, lodash) {
+function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
     api: {
       testnet: 'testnet.api.coloredcoins.org',
@@ -332,16 +331,29 @@ function ColoredCoins(profileService, configService, $http, $log, lodash) {
     postTo('broadcast', { txHex: txHex }, cb);
   };
 
-  root.createTransferTx = function(asset, amount, to, txIn, numSigsRequired, cb) {
+  root.createTransferTx = function(asset, amount, toAddress, txIn, numSigsRequired, cb) {
+    if (amount > asset.asset.amount) {
+      return cb({ error: "Cannot transfer more assets then available" }, null);
+    }
+    var to = [{
+      "address": toAddress,
+      "amount": amount,
+      "assetId": asset.asset.assetId
+    }];
+
+    // transfer the rest of asset back to our address
+    if (amount < asset.asset.amount) {
+      to.push({
+        "address": asset.address,
+        "amount": asset.asset.amount - amount,
+        "assetId": asset.asset.assetId
+      });
+    }
 
     var transfer = {
       from: asset.address,
       fee: 1000,
-      to: [{
-        "address": to,
-        "amount": amount,
-        "assetId": asset.asset.assetId
-      }],
+      to: to,
       flags: {
         injectPreviousOutput: true
       },
@@ -361,7 +373,7 @@ function ColoredCoins(profileService, configService, $http, $log, lodash) {
 
     console.log(JSON.stringify(transfer, null, 2));
 
-    postTo('sendasset', transfer, cb);
+    //postTo('sendasset', transfer, cb);
   };
 
   return root;
