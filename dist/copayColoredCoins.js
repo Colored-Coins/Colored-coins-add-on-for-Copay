@@ -328,7 +328,8 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
   };
 
   root.broadcastTx = function(txHex, cb) {
-    postTo('broadcast', { txHex: txHex }, cb);
+    var network = profileService.focusedClient.credentials.network;
+    postTo('broadcast', { txHex: txHex }, network, cb);
   };
 
   root.createTransferTx = function(asset, amount, toAddress, txIn, numSigsRequired, cb) {
@@ -372,8 +373,8 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     };
 
     console.log(JSON.stringify(transfer, null, 2));
-
-    //postTo('sendasset', transfer, cb);
+    var network = profileService.focusedClient.credentials.network;
+    postTo('sendasset', transfer, network, cb);
   };
 
   return root;
