@@ -131,6 +131,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
             if (err) { return handleTransferError(err); }
 
             $log.debug(txp);
+            console.log(txp);
 
             // save UTXO information from Transaction Proposal
             lodash.each(txp.inputs, function(i) {
@@ -139,8 +140,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
                 scriptPubKey: { hex: i.scriptPubKey, reqSigs: txp.requiredSignatures } };
               UTXOList.add(i.txid, utxo);
             });
-
-            console.log(txp);
 
             fc.removeTxProposal(txp, function(err, txpb) {
               if (err) { return handleTransferError(err); }

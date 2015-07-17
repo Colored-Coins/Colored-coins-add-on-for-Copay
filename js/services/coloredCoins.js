@@ -109,7 +109,9 @@ function ColoredCoins(profileService, configService, $http, $log, lodash) {
   };
 
   root.createTransferTx = function(asset, amount, to, txIn, numSigsRequired, cb) {
-
+    if (amount > asset.amount) {
+      return cb({ error: "Cannot transfer more assets then available" }, null);
+    }
     var transfer = {
       from: asset.address,
       fee: 1000,
