@@ -98,6 +98,9 @@ function ColoredCoins(profileService, configService, $http, $log, lodash) {
           }
         });
       });
+      if (assetsInfo.length == assets.length) {
+        return cb(assets);
+      }
     });
   };
 

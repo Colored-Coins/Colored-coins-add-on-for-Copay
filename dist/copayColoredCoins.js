@@ -140,6 +140,8 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
               UTXOList.add(i.txid, utxo);
             });
 
+            console.log(txp);
+
             fc.removeTxProposal(txp, function(err, txpb) {
               if (err) { return handleTransferError(err); }
               self.setOngoingProcess(gettext('Creating transfer transaction'));
@@ -321,6 +323,9 @@ function ColoredCoins(profileService, configService, $http, $log, lodash) {
           }
         });
       });
+      if (assetsInfo.length == assets.length) {
+        return cb(assets);
+      }
     });
   };
 
