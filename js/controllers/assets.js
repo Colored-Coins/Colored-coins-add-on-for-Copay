@@ -41,11 +41,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
       $scope.error = '';
 
-      $rootScope.$on('Colored/TransferSent', function() {
-        $scope.cancel();
-        $rootScope.$emit('NewOutgoingTx');
-      });
-
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
       };
@@ -114,7 +109,8 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
           setOngoingProcess(gettext('Broadcasting transaction'));
           coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
             if (err) { return handleTransferError(err); }
-            $rootScope.$emit('Colored/TransferSent');
+            $scope.cancel();
+            $rootScope.$emit('NewOutgoingTx');
           });
         });
       };
