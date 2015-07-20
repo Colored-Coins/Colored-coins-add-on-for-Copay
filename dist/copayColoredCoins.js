@@ -345,6 +345,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     var fee = 1000;
 
     selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
+      if (err) { return cb(err); }
 
       UTXOList.add(financeUtxo.txid, {
         txid: financeUtxo.txid, path: financeUtxo.path, index: financeUtxo.vout,
@@ -360,7 +361,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
         fee: fee,
         to: to,
         financeOutput: {
-          value: bitcore.Unit.fromSatoshis(financeUtxo.satoshis).BTC,
+          value: financeUtxo.satoshis,
           n: financeUtxo.vout,
           scriptPubKey: {
             asm: new bitcore.Script(financeUtxo.scriptPubKey).toString(),

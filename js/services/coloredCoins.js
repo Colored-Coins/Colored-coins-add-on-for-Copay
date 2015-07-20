@@ -168,7 +168,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
         fee: fee,
         to: to,
         financeOutput: {
-          value: bitcore.Unit.fromSatoshis(financeUtxo.satoshis).BTC,
+          value: financeUtxo.satoshis,
           n: financeUtxo.vout,
           scriptPubKey: {
             asm: new bitcore.Script(financeUtxo.scriptPubKey).toString(),
