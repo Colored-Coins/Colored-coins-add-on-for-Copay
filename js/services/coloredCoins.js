@@ -2,6 +2,7 @@
 
 function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $log, lodash) {
   var defaultConfig = {
+    fee: 1000,
     api: {
       testnet: 'testnet.api.coloredcoins.org',
       livenet: 'api.coloredcoins.org'
@@ -100,6 +101,10 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
   root.init = function() {};
 
+  root.defaultFee = function() {
+    return config.fee || defaultConfig.fee;
+  };
+
   root.getAssets = function(address, cb) {
     var network = profileService.focusedClient.credentials.network;
     getAssetsByAddress(address, network, function(err, assetsInfo) {
@@ -149,7 +154,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
     }
 
-    var fee = 1000;
+    var fee = root.defaultFee();
 
     selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
       if (err) { return cb(err); }

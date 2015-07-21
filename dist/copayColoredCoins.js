@@ -57,6 +57,8 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
                                            profileService, lodash, bitcore, externalTxSigner) {
       $scope.asset = asset;
 
+      $scope.fee = coloredCoins.defaultFee();
+
       $scope.error = '';
 
       $scope.cancel = function() {
@@ -195,6 +197,7 @@ angular.module('copayAddon.coloredCoins').service('UTXOList', function() {
 
 function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $log, lodash) {
   var defaultConfig = {
+    fee: 1000,
     api: {
       testnet: 'testnet.api.coloredcoins.org',
       livenet: 'api.coloredcoins.org'
@@ -203,6 +206,8 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
   var config = (configService.getSync()['coloredCoins'] || defaultConfig),
       root = {};
+
+
 
   var apiHost = function(network) {
     if (!config['api'] || ! config['api'][network]) {
@@ -293,6 +298,10 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
   root.init = function() {};
 
+  root.defaultFee = function() {
+    return config.fee || defaultConfig.fee;
+  };
+
   root.getAssets = function(address, cb) {
     var network = profileService.focusedClient.credentials.network;
     getAssetsByAddress(address, network, function(err, assetsInfo) {
@@ -342,7 +351,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
     }
 
-    var fee = 1000;
+    var fee = root.defaultFee();
 
     selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
       if (err) { return cb(err); }
@@ -618,11 +627,22 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "                                <a class=\"postfix\" translate>units</a>\n" +
     "                            </div>\n" +
     "                        </div>\n" +
+    "                        <div>\n" +
+    "                            <label for=\"fee\">\n" +
+    "                                <span translate>Fee</span>\n" +
+    "                            </label>\n" +
+    "\n" +
+    "                            <div class=\"input\">\n" +
+    "                                <input type=\"number\" id=\"fee\" ng-model=\"fee\" disabled>\n" +
+    "                                <a class=\"postfix\" translate>bits</a>\n" +
+    "                            </div>\n" +
+    "                        </div>\n" +
+    "\n" +
     "                    </div>\n" +
     "                </div>\n" +
     "                <div class=\"row\" ng-show=\"!home.onGoingProcess\">\n" +
     "                    <div class=\"large-6 medium-6 small-6 columns\"\n" +
-    "                         ng-show=\"!home.blockUx && (home.lockAddress || home.lockAmount)\">\n" +
+    "                             ng-show=\"!home.blockUx && (home.lockAddress || home.lockAmount)\">\n" +
     "                        <a ng-click=\"cancel()\" class=\"button expand outline dark-gray round\" translate>Cancel</a>\n" +
     "                    </div>\n" +
     "                    <div class=\"columns\"\n" +

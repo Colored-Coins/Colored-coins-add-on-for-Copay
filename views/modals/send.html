@@ -80,11 +80,22 @@
                                 <a class="postfix" translate>units</a>
                             </div>
                         </div>
+                        <div>
+                            <label for="fee">
+                                <span translate>Fee</span>
+                            </label>
+
+                            <div class="input">
+                                <input type="number" id="fee" ng-model="fee" disabled>
+                                <a class="postfix" translate>bits</a>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
                 <div class="row" ng-show="!home.onGoingProcess">
                     <div class="large-6 medium-6 small-6 columns"
-                         ng-show="!home.blockUx && (home.lockAddress || home.lockAmount)">
+                             ng-show="!home.blockUx && (home.lockAddress || home.lockAmount)">
                         <a ng-click="cancel()" class="button expand outline dark-gray round" translate>Cancel</a>
                     </div>
                     <div class="columns"

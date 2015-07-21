@@ -39,6 +39,8 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
                                            profileService, lodash, bitcore, externalTxSigner) {
       $scope.asset = asset;
 
+      $scope.fee = coloredCoins.defaultFee();
+
       $scope.error = '';
 
       $scope.cancel = function() {
