@@ -34,51 +34,60 @@
     <h4 class="title m0" translate>Details</h4>
     <ul class="no-bullet size-14 m0">
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Asset Name</span>:
+            <span class="text-gray property-name" translate>Asset Name</span>:
             <span class="right">
               <time>{{ asset.metadata.assetName }}</time>
             </span>
         </li>
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Asset ID</span>:
+            <span class="text-gray property-name" translate>Asset ID</span>:
             <span class="right">
               <time>{{ asset.metadata.assetId }}</time>
             </span>
         </li>
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Quantity</span>:
+            <span class="text-gray property-name" translate>Quantity</span>:
             <span class="right">
               <time>{{ asset.asset.amount }}</time>
             </span>
         </li>
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Issuer</span>:
+            <span class="text-gray property-name" translate>Issuer</span>:
             <span class="right">
               {{ asset.metadata.issuer }}
             </span>
         </li>
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Description</span>:
+            <span class="text-gray property-name" translate>Description</span>:
             <span class="right">
               {{ asset.metadata.description }}
             </span>
         </li>
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Date</span>:
+            <span class="text-gray property-name" translate>Date</span>:
             <span class="right">
 
             </span>
         </li>
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Issuance TX</span>:
+            <span class="text-gray property-name" translate>Issuance TX</span>:
             <span class="right">
               {{ asset.issuanceTxid }}
             </span>
         </li>
-
+        <li class="line-b p10 oh" ng-repeat="(name, value) in asset.metadata.userData">
+            <span class="text-gray property-name" translate>{{ name }}</span>:
+            <span class="right">
+              {{ value }}
+            </span>
+        </li>
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Raw metadata</span>:
-            <pre class="right" ng-bind-html="asset.metadata | stringify"></pre>
+            <span class="text-gray property-name" translate>URLs</span>:
+            <span class="right text-right asset-urls">
+                <span ng-repeat="url in asset.metadata.urls">
+                    <a href="{{ url.url }}">{{ url.name }}</a><br/>
+                </span>
+            </span>
         </li>
     </ul>
 

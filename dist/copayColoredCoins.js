@@ -525,51 +525,60 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "    <h4 class=\"title m0\" translate>Details</h4>\n" +
     "    <ul class=\"no-bullet size-14 m0\">\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Asset Name</span>:\n" +
+    "            <span class=\"text-gray property-name\" translate>Asset Name</span>:\n" +
     "            <span class=\"right\">\n" +
     "              <time>{{ asset.metadata.assetName }}</time>\n" +
     "            </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Asset ID</span>:\n" +
+    "            <span class=\"text-gray property-name\" translate>Asset ID</span>:\n" +
     "            <span class=\"right\">\n" +
     "              <time>{{ asset.metadata.assetId }}</time>\n" +
     "            </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Quantity</span>:\n" +
+    "            <span class=\"text-gray property-name\" translate>Quantity</span>:\n" +
     "            <span class=\"right\">\n" +
     "              <time>{{ asset.asset.amount }}</time>\n" +
     "            </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Issuer</span>:\n" +
+    "            <span class=\"text-gray property-name\" translate>Issuer</span>:\n" +
     "            <span class=\"right\">\n" +
     "              {{ asset.metadata.issuer }}\n" +
     "            </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Description</span>:\n" +
+    "            <span class=\"text-gray property-name\" translate>Description</span>:\n" +
     "            <span class=\"right\">\n" +
     "              {{ asset.metadata.description }}\n" +
     "            </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Date</span>:\n" +
+    "            <span class=\"text-gray property-name\" translate>Date</span>:\n" +
     "            <span class=\"right\">\n" +
     "\n" +
     "            </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Issuance TX</span>:\n" +
+    "            <span class=\"text-gray property-name\" translate>Issuance TX</span>:\n" +
     "            <span class=\"right\">\n" +
     "              {{ asset.issuanceTxid }}\n" +
     "            </span>\n" +
     "        </li>\n" +
-    "\n" +
+    "        <li class=\"line-b p10 oh\" ng-repeat=\"(name, value) in asset.metadata.userData\">\n" +
+    "            <span class=\"text-gray property-name\" translate>{{ name }}</span>:\n" +
+    "            <span class=\"right\">\n" +
+    "              {{ value }}\n" +
+    "            </span>\n" +
+    "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Raw metadata</span>:\n" +
-    "            <pre class=\"right\" ng-bind-html=\"asset.metadata | stringify\"></pre>\n" +
+    "            <span class=\"text-gray property-name\" translate>URLs</span>:\n" +
+    "            <span class=\"right text-right asset-urls\">\n" +
+    "                <span ng-repeat=\"url in asset.metadata.urls\">\n" +
+    "                    <a href=\"{{ url.url }}\">{{ url.name }}</a><br/>\n" +
+    "                </span>\n" +
+    "            </span>\n" +
     "        </li>\n" +
     "    </ul>\n" +
     "\n" +

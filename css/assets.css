@@ -1,0 +1,8 @@
+.property-name {
+    text-transform: capitalize;
+}
+
+.asset-urls a {
+    font-size: 14px !important;
+    padding: 0 !important;
+}
