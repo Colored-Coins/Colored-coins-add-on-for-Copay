@@ -15,10 +15,10 @@
 <div class="modal-content">
     <div class="header-modal text-center">
         <div class="size-42">
-            {{ asset.metadata.data.assetName }}
+            {{ asset.metadata.assetName }}
         </div>
-        <div class="size-18 m5t text-gray" ng-show="btx.alternativeAmount">
-            {{ asset.metadata.data.description }}
+        <div class="size-18 m5t text-gray">
+            {{ asset.metadata.description }}
         </div>
     </div>
 
@@ -34,17 +34,48 @@
     <h4 class="title m0" translate>Details</h4>
     <ul class="no-bullet size-14 m0">
         <li class="line-b p10 oh">
-            <span class="text-gray" translate>Amount</span>:
-    <span class="right">
-      <time>{{ asset.asset.amount }}</time>
-    </span>
+            <span class="text-gray" translate>Asset Name</span>:
+            <span class="right">
+              <time>{{ asset.metadata.assetName }}</time>
+            </span>
+        </li>
+        <li class="line-b p10 oh">
+            <span class="text-gray" translate>Asset ID</span>:
+            <span class="right">
+              <time>{{ asset.metadata.assetId }}</time>
+            </span>
+        </li>
+        <li class="line-b p10 oh">
+            <span class="text-gray" translate>Quantity</span>:
+            <span class="right">
+              <time>{{ asset.asset.amount }}</time>
+            </span>
         </li>
         <li class="line-b p10 oh">
             <span class="text-gray" translate>Issuer</span>:
-    <span class="right">
-      {{ asset.metadata.data.issuer }}
-    </span>
+            <span class="right">
+              {{ asset.metadata.issuer }}
+            </span>
         </li>
+        <li class="line-b p10 oh">
+            <span class="text-gray" translate>Description</span>:
+            <span class="right">
+              {{ asset.metadata.description }}
+            </span>
+        </li>
+        <li class="line-b p10 oh">
+            <span class="text-gray" translate>Date</span>:
+            <span class="right">
+
+            </span>
+        </li>
+        <li class="line-b p10 oh">
+            <span class="text-gray" translate>Issuance TX</span>:
+            <span class="right">
+              {{ asset.issuanceTxid }}
+            </span>
+        </li>
+
         <li class="line-b p10 oh">
             <span class="text-gray" translate>Raw metadata</span>:
             <pre class="right" ng-bind-html="asset.metadata | stringify"></pre>

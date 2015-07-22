@@ -7,10 +7,10 @@
         </div>
         <div class="small-4 columns">
             <div ng-if="!$root.updatingBalance">
-                <span class="text-bold size-16">{{ asset.metadata.data.assetName }}</span>
+                <span class="text-bold size-16">{{ asset.metadata.assetName }}</span>
             </div>
             <div class="ellipsis text-gray size-14">
-                {{ asset.metadata.data.description }}
+                {{ asset.metadata.description }}
             </div>
         </div>
         <div class="small-2 columns">
@@ -19,7 +19,7 @@
           </span>
         </div>
         <div class="small-4 columns">
-            <span class="size-14"><span translate>Issued by</span>: {{ asset.metadata.data.issuer }}</span>
+            <span class="size-14"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>
         </div>
         <div class="small-1 columns text-right">
             <i class="icon-arrow-right3 size-18"></i>

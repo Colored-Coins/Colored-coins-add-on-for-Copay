@@ -68,9 +68,9 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
   };
 
   var getMetadata = function(asset, network, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, body){
+    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, metadata){
       if (err) { return cb(err); }
-      return cb(null, body.metadataOfIssuence);
+      return cb(null, metadata);
     });
   };
 
@@ -115,7 +115,12 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
-          assets.push({ address: address, asset: asset, metadata: metadata });
+          assets.push({
+            address: address,
+            asset: asset,
+            issuanceTxid: metadata.issuanceTxid,
+            metadata: metadata.metadataOfIssuence.data
+          });
           if (assetsInfo.length == assets.length) {
             return cb(assets);
           }

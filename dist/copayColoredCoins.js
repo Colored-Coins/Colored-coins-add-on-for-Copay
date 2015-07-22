@@ -207,8 +207,6 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
   var config = (configService.getSync()['coloredCoins'] || defaultConfig),
       root = {};
 
-
-
   var apiHost = function(network) {
     if (!config['api'] || ! config['api'][network]) {
       return defaultConfig.api[network];
@@ -265,9 +263,9 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
   };
 
   var getMetadata = function(asset, network, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, body){
+    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, metadata){
       if (err) { return cb(err); }
-      return cb(null, body.metadataOfIssuence);
+      return cb(null, metadata);
     });
   };
 
@@ -312,7 +310,12 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
-          assets.push({ address: address, asset: asset, metadata: metadata });
+          assets.push({
+            address: address,
+            asset: asset,
+            issuanceTxid: metadata.issuanceTxid,
+            metadata: metadata.metadataOfIssuence.data
+          });
           if (assetsInfo.length == assets.length) {
             return cb(assets);
           }
@@ -461,10 +464,10 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
     "            <div ng-if=\"!$root.updatingBalance\">\n" +
-    "                <span class=\"text-bold size-16\">{{ asset.metadata.data.assetName }}</span>\n" +
+    "                <span class=\"text-bold size-16\">{{ asset.metadata.assetName }}</span>\n" +
     "            </div>\n" +
     "            <div class=\"ellipsis text-gray size-14\">\n" +
-    "                {{ asset.metadata.data.description }}\n" +
+    "                {{ asset.metadata.description }}\n" +
     "            </div>\n" +
     "        </div>\n" +
     "        <div class=\"small-2 columns\">\n" +
@@ -473,7 +476,7 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "          </span>\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
-    "            <span class=\"size-14\"><span translate>Issued by</span>: {{ asset.metadata.data.issuer }}</span>\n" +
+    "            <span class=\"size-14\"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>\n" +
     "        </div>\n" +
     "        <div class=\"small-1 columns text-right\">\n" +
     "            <i class=\"icon-arrow-right3 size-18\"></i>\n" +
@@ -503,10 +506,10 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "<div class=\"modal-content\">\n" +
     "    <div class=\"header-modal text-center\">\n" +
     "        <div class=\"size-42\">\n" +
-    "            {{ asset.metadata.data.assetName }}\n" +
+    "            {{ asset.metadata.assetName }}\n" +
     "        </div>\n" +
-    "        <div class=\"size-18 m5t text-gray\" ng-show=\"btx.alternativeAmount\">\n" +
-    "            {{ asset.metadata.data.description }}\n" +
+    "        <div class=\"size-18 m5t text-gray\">\n" +
+    "            {{ asset.metadata.description }}\n" +
     "        </div>\n" +
     "    </div>\n" +
     "\n" +
@@ -522,17 +525,48 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "    <h4 class=\"title m0\" translate>Details</h4>\n" +
     "    <ul class=\"no-bullet size-14 m0\">\n" +
     "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray\" translate>Amount</span>:\n" +
-    "    <span class=\"right\">\n" +
-    "      <time>{{ asset.asset.amount }}</time>\n" +
-    "    </span>\n" +
+    "            <span class=\"text-gray\" translate>Asset Name</span>:\n" +
+    "            <span class=\"right\">\n" +
+    "              <time>{{ asset.metadata.assetName }}</time>\n" +
+    "            </span>\n" +
+    "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Asset ID</span>:\n" +
+    "            <span class=\"right\">\n" +
+    "              <time>{{ asset.metadata.assetId }}</time>\n" +
+    "            </span>\n" +
+    "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Quantity</span>:\n" +
+    "            <span class=\"right\">\n" +
+    "              <time>{{ asset.asset.amount }}</time>\n" +
+    "            </span>\n" +
     "        </li>\n" +
     "        <li class=\"line-b p10 oh\">\n" +
     "            <span class=\"text-gray\" translate>Issuer</span>:\n" +
-    "    <span class=\"right\">\n" +
-    "      {{ asset.metadata.data.issuer }}\n" +
-    "    </span>\n" +
+    "            <span class=\"right\">\n" +
+    "              {{ asset.metadata.issuer }}\n" +
+    "            </span>\n" +
     "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Description</span>:\n" +
+    "            <span class=\"right\">\n" +
+    "              {{ asset.metadata.description }}\n" +
+    "            </span>\n" +
+    "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Date</span>:\n" +
+    "            <span class=\"right\">\n" +
+    "\n" +
+    "            </span>\n" +
+    "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray\" translate>Issuance TX</span>:\n" +
+    "            <span class=\"right\">\n" +
+    "              {{ asset.issuanceTxid }}\n" +
+    "            </span>\n" +
+    "        </li>\n" +
+    "\n" +
     "        <li class=\"line-b p10 oh\">\n" +
     "            <span class=\"text-gray\" translate>Raw metadata</span>:\n" +
     "            <pre class=\"right\" ng-bind-html=\"asset.metadata | stringify\"></pre>\n" +
@@ -562,10 +596,10 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "<div class=\"modal-content\">\n" +
     "    <div class=\"header-modal text-center\">\n" +
     "        <div class=\"size-42\">\n" +
-    "            {{ asset.metadata.data.assetName }}\n" +
+    "            {{ asset.metadata.assetName }}\n" +
     "        </div>\n" +
     "        <div class=\"size-18 m5t text-gray\" ng-show=\"btx.alternativeAmount\">\n" +
-    "            {{ asset.metadata.data.description }}\n" +
+    "            {{ asset.metadata.description }}\n" +
     "        </div>\n" +
     "    </div>\n" +
     "\n" +
