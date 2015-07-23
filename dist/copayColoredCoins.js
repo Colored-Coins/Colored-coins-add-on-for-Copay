@@ -59,6 +59,8 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
     var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
                                            profileService, lodash, bitcore, externalTxSigner) {
+      var self = this;
+
       $scope.asset = asset;
 
       $scope.fee = coloredCoins.defaultFee();
@@ -75,6 +77,22 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
       var setOngoingProcess = function(name) {
         $rootScope.$emit('Addon/OngoingProcess', name);
+      };
+
+      $scope.onQrCodeScanned = function(data) {
+        this.error = '';
+        var form = this.assetTransferForm;
+        if (data) {
+          form.address.$setViewValue(new bitcore.URI(data).address.toString());
+          form.address.$isValid = true;
+          form.address.$render();
+          $scope.lockAddress = true;
+        }
+
+        if (form.address.$invalid) {
+          $scope.resetForm(form);
+          this.error = gettext('Could not recognize a valid Bitcoin QR Code');
+        }
       };
 
       var setTransferError = function(err) {
@@ -99,6 +117,32 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         profileService.lockFC();
         setOngoingProcess();
         return setTransferError(err);
+      };
+
+      $scope.resetForm = function(form) {
+        $scope.resetError();
+
+        $scope.lockAddress = false;
+        $scope.lockAmount = false;
+
+        $scope._amount = $scope._address = null;
+
+        if (form && form.amount) {
+          form.amount.$pristine = true;
+          form.amount.$setViewValue('');
+          form.amount.$render();
+
+          form.$setPristine();
+
+          if (form.address) {
+            form.address.$pristine = true;
+            form.address.$setViewValue('');
+            form.address.$render();
+          }
+        }
+        $timeout(function() {
+          $rootScope.$digest();
+        }, 1);
       };
 
       $scope.transferAsset = function(transfer, form) {
@@ -604,6 +648,10 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "            Asset\n" +
     "        </h1>\n" +
     "    </section>\n" +
+    "\n" +
+    "    <section class=\"right-small\">\n" +
+    "        <qr-scanner on-scan=\"onQrCodeScanned(data)\" />\n" +
+    "    </section>\n" +
     "</nav>\n" +
     "\n" +
     "<div class=\"modal-content\">\n" +
@@ -643,12 +691,11 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "                    </div>\n" +
     "\n" +
     "                    <div class=\"input\">\n" +
-    "                        <input type=\"text\" id=\"address\" name=\"address\" ng-disabled=\"home.blockUx || home.lockAddress\"\n" +
+    "                        <input type=\"text\" id=\"address\" name=\"address\" ng-disabled=\"home.blockUx || lockAddress\"\n" +
     "                               ng-attr-placeholder=\"{{'Bitcoin address'|translate}}\" ng-model=\"transfer._address\" valid-address\n" +
     "                               required ng-focus=\"home.formFocus('address')\" ng-blur=\"home.formFocus(false)\">\n" +
     "                    </div>\n" +
     "                </div>\n" +
-    "\n" +
     "                <div class=\"row\" ng-hide=\"home.hideAmount\">\n" +
     "                    <div class=\"large-12 medium-12 columns\">\n" +
     "                        <div class=\"right\" ng-hide=\"assetTransferForm.amount.$pristine && !assetTransferForm.amount.$modelValue \">\n" +
@@ -666,7 +713,7 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "                            </label>\n" +
     "\n" +
     "                            <div class=\"input\">\n" +
-    "                                <input type=\"number\" id=\"amount\" ng-disabled=\"home.blockUx || home.lockAmount\"\n" +
+    "                                <input type=\"number\" id=\"amount\" ng-disabled=\"home.blockUx || lockAmount\"\n" +
     "                                       name=\"amount\" ng-attr-placeholder=\"{{'Amount'|translate}}\"\n" +
     "                                       ng-minlength=\"0.00000001\" ng-maxlength=\"10000000000\" ng-model=\"transfer._amount\"\n" +
     "                                       valid-amount required autocomplete=\"off\" ng-focus=\"home.formFocus('amount')\"\n" +

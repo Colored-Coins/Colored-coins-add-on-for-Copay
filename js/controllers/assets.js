@@ -59,6 +59,22 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         $rootScope.$emit('Addon/OngoingProcess', name);
       };
 
+      $scope.onQrCodeScanned = function(data) {
+        this.error = '';
+        var form = this.assetTransferForm;
+        if (data) {
+          form.address.$setViewValue(new bitcore.URI(data).address.toString());
+          form.address.$isValid = true;
+          form.address.$render();
+          $scope.lockAddress = true;
+        }
+
+        if (form.address.$invalid) {
+          $scope.resetForm(form);
+          this.error = gettext('Could not recognize a valid Bitcoin QR Code');
+        }
+      };
+
       var setTransferError = function(err) {
         var fc = profileService.focusedClient;
         $log.warn(err);
@@ -81,6 +97,32 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         profileService.lockFC();
         setOngoingProcess();
         return setTransferError(err);
+      };
+
+      $scope.resetForm = function(form) {
+        $scope.resetError();
+
+        $scope.lockAddress = false;
+        $scope.lockAmount = false;
+
+        $scope._amount = $scope._address = null;
+
+        if (form && form.amount) {
+          form.amount.$pristine = true;
+          form.amount.$setViewValue('');
+          form.amount.$render();
+
+          form.$setPristine();
+
+          if (form.address) {
+            form.address.$pristine = true;
+            form.address.$setViewValue('');
+            form.address.$render();
+          }
+        }
+        $timeout(function() {
+          $rootScope.$digest();
+        }, 1);
       };
 
       $scope.transferAsset = function(transfer, form) {

@@ -10,6 +10,10 @@
             Asset
         </h1>
     </section>
+
+    <section class="right-small">
+        <qr-scanner on-scan="onQrCodeScanned(data)" />
+    </section>
 </nav>
 
 <div class="modal-content">
@@ -49,12 +53,11 @@
                     </div>
 
                     <div class="input">
-                        <input type="text" id="address" name="address" ng-disabled="home.blockUx || home.lockAddress"
+                        <input type="text" id="address" name="address" ng-disabled="home.blockUx || lockAddress"
                                ng-attr-placeholder="{{'Bitcoin address'|translate}}" ng-model="transfer._address" valid-address
                                required ng-focus="home.formFocus('address')" ng-blur="home.formFocus(false)">
                     </div>
                 </div>
-
                 <div class="row" ng-hide="home.hideAmount">
                     <div class="large-12 medium-12 columns">
                         <div class="right" ng-hide="assetTransferForm.amount.$pristine && !assetTransferForm.amount.$modelValue ">
@@ -72,7 +75,7 @@
                             </label>
 
                             <div class="input">
-                                <input type="number" id="amount" ng-disabled="home.blockUx || home.lockAmount"
+                                <input type="number" id="amount" ng-disabled="home.blockUx || lockAmount"
                                        name="amount" ng-attr-placeholder="{{'Amount'|translate}}"
                                        ng-minlength="0.00000001" ng-maxlength="10000000000" ng-model="transfer._amount"
                                        valid-amount required autocomplete="off" ng-focus="home.formFocus('amount')"
