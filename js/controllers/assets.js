@@ -11,7 +11,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
     $rootScope.$emit('Addon/OngoingProcess', name);
   };
 
-  $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
+  var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
     self.assets = [];
     addressToPath = lodash.reduce(balance.byAddress, function(result, n) { result[n.address] = n.path; return result; }, {});
     if (balance.byAddress.length > 0) {
@@ -31,6 +31,10 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         }
       })
     });
+  });
+
+  $scope.$on('$destroy', function() {
+    disableBalanceListener();
   });
 
   this.openTransferModal = function(asset) {
