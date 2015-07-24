@@ -123,6 +123,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
           assets.push({
             address: address,
             asset: asset,
+            network: network,
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data

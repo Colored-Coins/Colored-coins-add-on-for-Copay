@@ -364,6 +364,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
           assets.push({
             address: address,
             asset: asset,
+            network: network,
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
@@ -510,9 +511,10 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
   $templateCache.put("colored-coins/views/assets.html",
     "<div ng-show=\"assets.assets\" class=\"scroll\" ng-controller=\"assetsController as assets\">\n" +
     "    <div ng-repeat=\"asset in assets.assets\" ng-click=\"assets.openAssetModal(asset)\"\n" +
-    "         class=\"row collapse last-transactions-content\">\n" +
+    "         class=\"row collapse assets-list\">\n" +
     "        <div class=\"small-1 columns text-center\">\n" +
-    "            <i class=\"icon-pricetag size-24\" style=\"margin-top:8px;\"></i>\n" +
+    "            <img src=\"{{ asset.icon }}\" class=\"asset-icon icon\" ng-show=\"asset.icon\"/>\n" +
+    "            <i class=\"icon-pricetag size-24 icon\" ng-hide=\"asset.icon\"></i>\n" +
     "            &nbsp;\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
@@ -608,25 +610,73 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "              {{ asset.metadata.description }}\n" +
     "            </span>\n" +
     "        </li>\n" +
-    "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray property-name\" translate>Date</span>:\n" +
-    "            <span class=\"right\">\n" +
-    "\n" +
-    "            </span>\n" +
-    "        </li>\n" +
-    "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray property-name\" translate>Issuance TX</span>:\n" +
-    "            <span class=\"right\">\n" +
-    "              {{ asset.issuanceTxid }}\n" +
-    "            </span>\n" +
-    "        </li>\n" +
     "        <li class=\"line-b p10 oh\" ng-repeat=\"(name, value) in asset.metadata.userData\">\n" +
     "            <span class=\"text-gray property-name\" translate>{{ name }}</span>:\n" +
     "            <span class=\"right\">\n" +
     "              {{ value }}\n" +
     "            </span>\n" +
     "        </li>\n" +
+    "        <li class=\"line-b p10 oh\">\n" +
+    "            <span class=\"text-gray property-name\" translate>URLs</span>:\n" +
+    "            <span class=\"right text-right asset-urls\">\n" +
+    "                <span ng-repeat=\"url in asset.metadata.urls\">\n" +
+    "                    <a href=\"{{ url.url }}\">{{ url.name }}</a><br/>\n" +
+    "                </span>\n" +
+    "            </span>\n" +
+    "        </li>\n" +
     "    </ul>\n" +
+    "\n" +
+    "    <div class=\"m10t oh\" ng-init=\"hideAdv=true\">\n" +
+    "        <a class=\"button outline light-gray expand tiny\" ng-click=\"hideAdv=!hideAdv\">\n" +
+    "            <span translate ng-hide=\"!hideAdv\">Show Advanced</span>\n" +
+    "            <span translate ng-hide=\"hideAdv\">Hide Advanced</span>\n" +
+    "            <i ng-if=\"hideAdv\" class=\"icon-arrow-down4\"></i>\n" +
+    "            <i ng-if=\"!hideAdv\" class=\"icon-arrow-up4\"></i>\n" +
+    "        </a>\n" +
+    "    </div>\n" +
+    "    <div ng-hide=\"hideAdv\" class=\"m10t oh\">\n" +
+    "        <ul class=\"no-bullet size-14 m0\">\n" +
+    "            <li class=\"line-b p10 oh\">\n" +
+    "                <span class=\"text-gray property-name\" translate>Divisable</span>:\n" +
+    "                <span class=\"right\">\n" +
+    "\n" +
+    "                </span>\n" +
+    "            </li>\n" +
+    "            <li class=\"line-b p10 oh\">\n" +
+    "                <span class=\"text-gray property-name\" translate>Reissuable</span>:\n" +
+    "                <span class=\"right\">\n" +
+    "\n" +
+    "                </span>\n" +
+    "            </li>\n" +
+    "            <li class=\"line-b p10 oh\">\n" +
+    "                <span class=\"text-gray property-name\" translate>Issuance TX</span>:\n" +
+    "                <span class=\"right\">\n" +
+    "                  {{ asset.issuanceTxid }}\n" +
+    "                </span>\n" +
+    "            </li>\n" +
+    "            <li class=\"line-b p10 oh\">\n" +
+    "                <span class=\"text-gray property-name\" translate>Issuer Address</span>:\n" +
+    "                <span class=\"right\">\n" +
+    "\n" +
+    "                </span>\n" +
+    "            </li>\n" +
+    "            <li class=\"line-b p10 oh\">\n" +
+    "                <span class=\"text-gray property-name\" translate>Issuance Date</span>:\n" +
+    "                <span class=\"right\">\n" +
+    "\n" +
+    "                </span>\n" +
+    "            </li>\n" +
+    "        </ul>\n" +
+    "\n" +
+    "        <div ng-show=\"asset.issuanceTxid\">\n" +
+    "            <div class=\"text-center m20t\">\n" +
+    "                <button class=\"button outline round dark-gray tiny\" ng-click=\"$root.openExternalLink('https://' +\n" +
+    "            (asset.network == 'testnet' ? 'test-' : '') + 'insight.bitpay.com/tx/' + asset.issuanceTxid)\">\n" +
+    "                    <span class=\"text-gray\" translate>See it on the blockchain</span>\n" +
+    "                </button>\n" +
+    "            </div>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
     "\n" +
     "    <div class=\"extra-margin-bottom\"></div>\n" +
     "</div>");

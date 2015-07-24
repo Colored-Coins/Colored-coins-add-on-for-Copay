@@ -64,18 +64,6 @@
               {{ asset.metadata.description }}
             </span>
         </li>
-        <li class="line-b p10 oh">
-            <span class="text-gray property-name" translate>Date</span>:
-            <span class="right">
-
-            </span>
-        </li>
-        <li class="line-b p10 oh">
-            <span class="text-gray property-name" translate>Issuance TX</span>:
-            <span class="right">
-              {{ asset.issuanceTxid }}
-            </span>
-        </li>
         <li class="line-b p10 oh" ng-repeat="(name, value) in asset.metadata.userData">
             <span class="text-gray property-name" translate>{{ name }}</span>:
             <span class="right">
@@ -91,6 +79,58 @@
             </span>
         </li>
     </ul>
+
+    <div class="m10t oh" ng-init="hideAdv=true">
+        <a class="button outline light-gray expand tiny" ng-click="hideAdv=!hideAdv">
+            <span translate ng-hide="!hideAdv">Show Advanced</span>
+            <span translate ng-hide="hideAdv">Hide Advanced</span>
+            <i ng-if="hideAdv" class="icon-arrow-down4"></i>
+            <i ng-if="!hideAdv" class="icon-arrow-up4"></i>
+        </a>
+    </div>
+    <div ng-hide="hideAdv" class="m10t oh">
+        <ul class="no-bullet size-14 m0">
+            <li class="line-b p10 oh">
+                <span class="text-gray property-name" translate>Divisable</span>:
+                <span class="right">
+
+                </span>
+            </li>
+            <li class="line-b p10 oh">
+                <span class="text-gray property-name" translate>Reissuable</span>:
+                <span class="right">
+
+                </span>
+            </li>
+            <li class="line-b p10 oh">
+                <span class="text-gray property-name" translate>Issuance TX</span>:
+                <span class="right">
+                  {{ asset.issuanceTxid }}
+                </span>
+            </li>
+            <li class="line-b p10 oh">
+                <span class="text-gray property-name" translate>Issuer Address</span>:
+                <span class="right">
+
+                </span>
+            </li>
+            <li class="line-b p10 oh">
+                <span class="text-gray property-name" translate>Issuance Date</span>:
+                <span class="right">
+
+                </span>
+            </li>
+        </ul>
+
+        <div ng-show="asset.issuanceTxid">
+            <div class="text-center m20t">
+                <button class="button outline round dark-gray tiny" ng-click="$root.openExternalLink('https://' +
+            (asset.network == 'testnet' ? 'test-' : '') + 'insight.bitpay.com/tx/' + asset.issuanceTxid)">
+                    <span class="text-gray" translate>See it on the blockchain</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div class="extra-margin-bottom"></div>
 </div>
