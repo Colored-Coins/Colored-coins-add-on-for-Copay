@@ -82,6 +82,14 @@
               {{ value }}
             </span>
         </li>
+        <li class="line-b p10 oh">
+            <span class="text-gray property-name" translate>URLs</span>:
+            <span class="right text-right asset-urls">
+                <span ng-repeat="url in asset.metadata.urls">
+                    <a href="{{ url.url }}">{{ url.name }}</a><br/>
+                </span>
+            </span>
+        </li>
     </ul>
 
     <div class="extra-margin-bottom"></div>
