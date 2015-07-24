@@ -1,8 +1,9 @@
 <div ng-show="assets.assets" class="scroll" ng-controller="assetsController as assets">
     <div ng-repeat="asset in assets.assets" ng-click="assets.openAssetModal(asset)"
-         class="row collapse last-transactions-content">
+         class="row collapse assets-list">
         <div class="small-1 columns text-center">
-            <i class="icon-pricetag size-24" style="margin-top:8px;"></i>
+            <img src="{{ asset.icon }}" class="asset-icon icon" ng-show="asset.icon"/>
+            <i class="icon-pricetag size-24 icon" ng-hide="asset.icon"></i>
             &nbsp;
         </div>
         <div class="small-4 columns">

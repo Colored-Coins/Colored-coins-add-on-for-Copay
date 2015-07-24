@@ -11,3 +11,22 @@
     max-height: 168px;
     max-width: 168px;
 }
+
+.assets-list {
+    padding: 1.5rem 1rem;
+    cursor:pointer;
+    border-bottom: 1px solid #E4E8EC;
+}
+
+    .assets-list .icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-top: -12px;
+        margin-left: -12px;
+    }
+
+    .assets-list .asset-icon {
+        border-radius: 50%;
+        height: 25px;
+    }
