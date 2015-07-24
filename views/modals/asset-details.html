@@ -14,7 +14,7 @@
 
 <div class="modal-content">
     <div class="header-modal text-center">
-        <img src="{{ asset.icon }}" class="asset-image" ng-show="asset.icon"/>
+        <img ng-src="{{ asset.icon }}" class="asset-image" ng-show="asset.icon"/>
         <div class="size-42">
             {{ asset.metadata.assetName }}
         </div>
@@ -93,18 +93,18 @@
             <li class="line-b p10 oh">
                 <span class="text-gray property-name" translate>Divisable</span>:
                 <span class="right">
-
+                    <boolean-icon value="asset.divisible"/>
                 </span>
             </li>
             <li class="line-b p10 oh">
                 <span class="text-gray property-name" translate>Reissuable</span>:
                 <span class="right">
-
+                    <boolean-icon value="asset.reissuable"/>
                 </span>
             </li>
             <li class="line-b p10 oh">
                 <span class="text-gray property-name" translate>Issuance TX</span>:
-                <span class="right">
+                <span class="right pointer enable_text_select" ng-click="openBlockExplorer(asset)">
                   {{ asset.issuanceTxid }}
                 </span>
             </li>
@@ -124,8 +124,7 @@
 
         <div ng-show="asset.issuanceTxid">
             <div class="text-center m20t">
-                <button class="button outline round dark-gray tiny" ng-click="$root.openExternalLink('https://' +
-            (asset.network == 'testnet' ? 'test-' : '') + 'insight.bitpay.com/tx/' + asset.issuanceTxid)">
+                <button class="button outline round dark-gray tiny" ng-click="openBlockExplorer(asset)">
                     <span class="text-gray" translate>See it on the blockchain</span>
                 </button>
             </div>
