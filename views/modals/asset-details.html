@@ -74,7 +74,7 @@
             <span class="text-gray property-name" translate>URLs</span>:
             <span class="right text-right asset-urls">
                 <span ng-repeat="url in asset.metadata.urls">
-                    <a href="{{ url.url }}">{{ url.name }}</a><br/>
+                    <a ng-click="$root.openExternalLink(url.url)">{{ url.name }}</a><br/>
                 </span>
             </span>
         </li>
