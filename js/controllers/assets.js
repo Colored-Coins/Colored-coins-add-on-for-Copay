@@ -177,13 +177,18 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
   };
 
   this.openAssetModal = function (asset) {
-    var ModalInstanceCtrl = function($rootScope, $scope, $modalInstance) {
+    var ModalInstanceCtrl = function($rootScope, $scope, $modalInstance, insight) {
       $scope.asset = asset;
+      insight = insight.get();
+      insight.getTransaction(asset.issuanceTxid, function(err, tx) {
+        if (!err) {
+          $scope.issuanceTx = tx;
+        }
+      });
       $scope.openTransferModal = self.openTransferModal;
 
       $scope.openBlockExplorer = function(asset) {
-        $rootScope.openExternalLink('https://' +
-            (asset.network == 'testnet' ? 'test-' : '') + 'insight.bitpay.com/tx/' + asset.issuanceTxid)
+        $rootScope.openExternalLink(insight.url + '/tx/' + asset.issuanceTxid)
       };
 
       $scope.cancel = function() {

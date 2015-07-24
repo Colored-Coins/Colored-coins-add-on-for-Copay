@@ -195,9 +195,20 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
   };
 
   this.openAssetModal = function (asset) {
-    var ModalInstanceCtrl = function($scope, $modalInstance) {
+    var ModalInstanceCtrl = function($rootScope, $scope, $modalInstance, insight) {
       $scope.asset = asset;
+      insight = insight.get();
+      insight.getTransaction(asset.issuanceTxid, function(err, tx) {
+        if (!err) {
+          $scope.issuanceTx = tx;
+        }
+      });
       $scope.openTransferModal = self.openTransferModal;
+
+      $scope.openBlockExplorer = function(asset) {
+        $rootScope.openExternalLink(insight.url + '/tx/' + asset.issuanceTxid)
+      };
+
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
       };
@@ -365,12 +376,12 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
             address: address,
             asset: asset,
             network: network,
+            divisible: metadata.divisibility,
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
           });
           if (assetsInfo.length == assets.length) {
-            console.log(assets);
             return cb(assets);
           }
         });
@@ -505,6 +516,58 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
 
   return root;
 });
+'use strict';
+
+
+angular.module('copayAddon.coloredCoins').factory('insight', function ($http, profileService) {
+
+  function Insight(opts) {
+    this.network = opts.network || 'livenet';
+    this.url = opts.url;
+  }
+
+  Insight.prototype.getTransaction = function(txid, cb) {
+    var url = this.url + '/api/tx/' + txid;
+
+    $http.get(url)
+        .success(function (data, status) {
+          if (status != 200) return cb(data);
+          return cb(null, data);
+        })
+        .error(function (data, status) {
+          return cb(data);
+        });
+  };
+
+  var testnetInsight = new Insight({ network: 'testnet', url: 'https://test-insight.bitpay.com' });
+
+  var livenetInsight = new Insight({ network: 'livenet', url: 'https://insight.bitpay.com' });
+
+  return {
+    get: function() {
+      var fc = profileService.focusedClient;
+      return fc.credentials.network == 'testnet' ? testnetInsight : livenetInsight;
+    }
+  };
+});
+
+'use strict';
+
+angular.module('copayAddon.coloredCoins')
+    .directive('booleanIcon', function() {
+      return {
+        restrict: 'E',
+        scope: {
+          value: '='
+        },
+        replace: true,
+        template: '<span>' +
+                    '<i class="fi-check" style="color:green" ng-show="value"></i>' +
+                    '<i class="fi-x" style="color:red" ng-show="!value"></i>' +
+                  '</span>'
+      }
+    });
+
 angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/send.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
@@ -560,7 +623,7 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "\n" +
     "<div class=\"modal-content\">\n" +
     "    <div class=\"header-modal text-center\">\n" +
-    "        <img src=\"{{ asset.icon }}\" class=\"asset-image\" ng-show=\"asset.icon\"/>\n" +
+    "        <img ng-src=\"{{ asset.icon }}\" class=\"asset-image\" ng-show=\"asset.icon\"/>\n" +
     "        <div class=\"size-42\">\n" +
     "            {{ asset.metadata.assetName }}\n" +
     "        </div>\n" +
@@ -620,7 +683,7 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "            <span class=\"text-gray property-name\" translate>URLs</span>:\n" +
     "            <span class=\"right text-right asset-urls\">\n" +
     "                <span ng-repeat=\"url in asset.metadata.urls\">\n" +
-    "                    <a href=\"{{ url.url }}\">{{ url.name }}</a><br/>\n" +
+    "                    <a ng-click=\"$root.openExternalLink(url.url)\">{{ url.name }}</a><br/>\n" +
     "                </span>\n" +
     "            </span>\n" +
     "        </li>\n" +
@@ -639,39 +702,38 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Divisable</span>:\n" +
     "                <span class=\"right\">\n" +
-    "\n" +
+    "                    <boolean-icon value=\"asset.divisible\"/>\n" +
     "                </span>\n" +
     "            </li>\n" +
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Reissuable</span>:\n" +
     "                <span class=\"right\">\n" +
-    "\n" +
+    "                    <boolean-icon value=\"asset.reissuable\"/>\n" +
     "                </span>\n" +
     "            </li>\n" +
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Issuance TX</span>:\n" +
-    "                <span class=\"right\">\n" +
+    "                <span class=\"right pointer enable_text_select\" ng-click=\"openBlockExplorer(asset)\">\n" +
     "                  {{ asset.issuanceTxid }}\n" +
     "                </span>\n" +
     "            </li>\n" +
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Issuer Address</span>:\n" +
     "                <span class=\"right\">\n" +
-    "\n" +
+    "                    {{ issuanceTx.vin[0].addr }}\n" +
     "                </span>\n" +
     "            </li>\n" +
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Issuance Date</span>:\n" +
     "                <span class=\"right\">\n" +
-    "\n" +
+    "                    {{ issuanceTx.time * 1000 | date:'dd MMM yyyy hh:mm'}}\n" +
     "                </span>\n" +
     "            </li>\n" +
     "        </ul>\n" +
     "\n" +
     "        <div ng-show=\"asset.issuanceTxid\">\n" +
     "            <div class=\"text-center m20t\">\n" +
-    "                <button class=\"button outline round dark-gray tiny\" ng-click=\"$root.openExternalLink('https://' +\n" +
-    "            (asset.network == 'testnet' ? 'test-' : '') + 'insight.bitpay.com/tx/' + asset.issuanceTxid)\">\n" +
+    "                <button class=\"button outline round dark-gray tiny\" ng-click=\"openBlockExplorer(asset)\">\n" +
     "                    <span class=\"text-gray\" translate>See it on the blockchain</span>\n" +
     "                </button>\n" +
     "            </div>\n" +

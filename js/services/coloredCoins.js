@@ -130,7 +130,6 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
             metadata: metadata.metadataOfIssuence.data
           });
           if (assetsInfo.length == assets.length) {
-            console.log(assets);
             return cb(assets);
           }
         });

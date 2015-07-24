@@ -111,13 +111,13 @@
             <li class="line-b p10 oh">
                 <span class="text-gray property-name" translate>Issuer Address</span>:
                 <span class="right">
-
+                    {{ issuanceTx.vin[0].addr }}
                 </span>
             </li>
             <li class="line-b p10 oh">
                 <span class="text-gray property-name" translate>Issuance Date</span>:
                 <span class="right">
-
+                    {{ issuanceTx.time * 1000 | date:'dd MMM yyyy hh:mm'}}
                 </span>
             </li>
         </ul>
