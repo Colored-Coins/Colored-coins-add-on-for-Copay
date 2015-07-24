@@ -124,6 +124,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
             address: address,
             asset: asset,
             network: network,
+            divisible: metadata.divisibility,
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
