@@ -99,6 +99,11 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     });
   };
 
+  var _extractAssetIcon = function(metadata) {
+    var icon = lodash.find(lodash.property('metadataOfIssuence.data.urls')(metadata) || [], function(url) { return url.name == 'icon'; });
+    return icon ? icon.url : null;
+  };
+
   root.init = function() {};
 
   root.defaultFee = function() {
@@ -118,10 +123,12 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
           assets.push({
             address: address,
             asset: asset,
+            icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
           });
           if (assetsInfo.length == assets.length) {
+            console.log(assets);
             return cb(assets);
           }
         });

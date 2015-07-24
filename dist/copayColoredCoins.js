@@ -59,8 +59,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
 
     var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
                                            profileService, lodash, bitcore, externalTxSigner) {
-      var self = this;
-
       $scope.asset = asset;
 
       $scope.fee = coloredCoins.defaultFee();
@@ -342,6 +340,11 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     });
   };
 
+  var _extractAssetIcon = function(metadata) {
+    var icon = lodash.find(lodash.property('metadataOfIssuence.data.urls')(metadata) || [], function(url) { return url.name == 'icon'; });
+    return icon ? icon.url : null;
+  };
+
   root.init = function() {};
 
   root.defaultFee = function() {
@@ -361,10 +364,12 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
           assets.push({
             address: address,
             asset: asset,
+            icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
           });
           if (assetsInfo.length == assets.length) {
+            console.log(assets);
             return cb(assets);
           }
         });
@@ -553,6 +558,7 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "\n" +
     "<div class=\"modal-content\">\n" +
     "    <div class=\"header-modal text-center\">\n" +
+    "        <img src=\"{{ asset.icon }}\" class=\"asset-image\" ng-show=\"asset.icon\"/>\n" +
     "        <div class=\"size-42\">\n" +
     "            {{ asset.metadata.assetName }}\n" +
     "        </div>\n" +
@@ -618,14 +624,6 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "            <span class=\"text-gray property-name\" translate>{{ name }}</span>:\n" +
     "            <span class=\"right\">\n" +
     "              {{ value }}\n" +
-    "            </span>\n" +
-    "        </li>\n" +
-    "        <li class=\"line-b p10 oh\">\n" +
-    "            <span class=\"text-gray property-name\" translate>URLs</span>:\n" +
-    "            <span class=\"right text-right asset-urls\">\n" +
-    "                <span ng-repeat=\"url in asset.metadata.urls\">\n" +
-    "                    <a href=\"{{ url.url }}\">{{ url.name }}</a><br/>\n" +
-    "                </span>\n" +
     "            </span>\n" +
     "        </li>\n" +
     "    </ul>\n" +

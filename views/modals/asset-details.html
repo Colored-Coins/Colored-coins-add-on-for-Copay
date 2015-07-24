@@ -14,6 +14,7 @@
 
 <div class="modal-content">
     <div class="header-modal text-center">
+        <img src="{{ asset.icon }}" class="asset-image" ng-show="asset.icon"/>
         <div class="size-42">
             {{ asset.metadata.assetName }}
         </div>
@@ -79,14 +80,6 @@
             <span class="text-gray property-name" translate>{{ name }}</span>:
             <span class="right">
               {{ value }}
-            </span>
-        </li>
-        <li class="line-b p10 oh">
-            <span class="text-gray property-name" translate>URLs</span>:
-            <span class="right text-right asset-urls">
-                <span ng-repeat="url in asset.metadata.urls">
-                    <a href="{{ url.url }}">{{ url.name }}</a><br/>
-                </span>
             </span>
         </li>
     </ul>

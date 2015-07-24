@@ -6,3 +6,8 @@
     font-size: 14px !important;
     padding: 0 !important;
 }
+
+.asset-image {
+    max-height: 168px;
+    max-width: 168px;
+}
