@@ -705,12 +705,14 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "                    <boolean-icon value=\"asset.divisible\"/>\n" +
     "                </span>\n" +
     "            </li>\n" +
+    "<!--\n" +
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Reissuable</span>:\n" +
     "                <span class=\"right\">\n" +
     "                    <boolean-icon value=\"asset.reissuable\"/>\n" +
     "                </span>\n" +
     "            </li>\n" +
+    "-->\n" +
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Issuance TX</span>:\n" +
     "                <span class=\"right pointer enable_text_select\" ng-click=\"openBlockExplorer(asset)\">\n" +
