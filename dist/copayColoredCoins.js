@@ -576,8 +576,8 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "    <div ng-repeat=\"asset in assets.assets\" ng-click=\"assets.openAssetModal(asset)\"\n" +
     "         class=\"row collapse assets-list\">\n" +
     "        <div class=\"small-1 columns text-center\">\n" +
-    "            <img src=\"{{ asset.icon }}\" class=\"asset-icon icon\" ng-show=\"asset.icon\"/>\n" +
-    "            <i class=\"icon-pricetag size-24 icon\" ng-hide=\"asset.icon\"></i>\n" +
+    "            <img ng-src=\"{{ asset.icon }}\" class=\"asset-icon icon\" ng-show=\"asset.icon\"/>\n" +
+    "            <img class=\"asset-icon icon default-icon\" ng-hide=\"asset.icon\"/>\n" +
     "            &nbsp;\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
