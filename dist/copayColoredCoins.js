@@ -700,9 +700,9 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "    <div ng-hide=\"hideAdv\" class=\"m10t oh\">\n" +
     "        <ul class=\"no-bullet size-14 m0\">\n" +
     "            <li class=\"line-b p10 oh\">\n" +
-    "                <span class=\"text-gray property-name\" translate>Divisable</span>:\n" +
+    "                <span class=\"text-gray property-name\" translate>Divisible</span>:\n" +
     "                <span class=\"right\">\n" +
-    "                    <boolean-icon value=\"asset.divisible\"/>\n" +
+    "                    {{ asset.divisible }}\n" +
     "                </span>\n" +
     "            </li>\n" +
     "<!--\n" +
