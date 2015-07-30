@@ -84,6 +84,16 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
   var selectFinanceOutput = function(fee, fc, assets, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
+
+      lodash.each(utxos, function(utxo) {
+        utxo.scriptPubKey = {
+          hex: utxo.scriptPubKey,
+          reqSigs: fc.credentials.m
+        };
+
+        UTXOList.add(utxo.txid, utxo);
+      });
+
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 
       var colorlessUtxos = lodash.reject(utxos, function(utxo) {
@@ -171,15 +181,6 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
     selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
       if (err) { return cb(err); }
-
-      UTXOList.add(financeUtxo.txid, {
-        txid: financeUtxo.txid, path: financeUtxo.path, index: financeUtxo.vout,
-        value: financeUtxo.satoshis, publicKeys: financeUtxo.publicKeys,
-        scriptPubKey: {
-          hex: financeUtxo.scriptPubKey,
-          reqSigs: fc.credentials.m
-        }
-      });
 
       var transfer = {
         from: asset.address,

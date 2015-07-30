@@ -27,7 +27,7 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
         var path = utxo.path;
         var pubKey = derivedPrivKeys[path].publicKey;
         var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
-        var from = {'txId': txid, outputIndex: utxo.index, satoshis: utxo.value, script: script };
+        var from = {'txId': txid, outputIndex: utxo.vout, satoshis: utxo.satoshis, script: script };
         tx.from(from, [pubKey], utxo.scriptPubKey.reqSigs);
       }
     };

@@ -18,7 +18,7 @@ module.config(function(addonManagerProvider) {
 });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, UTXOList) {
+angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
   var self = this;
 
   this.assets = [];
@@ -40,10 +40,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
     balance.byAddress.forEach(function (ba) {
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
-        lodash.each(assets, function(a) {
-          a.asset.utxo.path = addressToPath[ba.address];
-          UTXOList.add(a.asset.utxo.txid, a.asset.utxo);
-        });
         if (++checkedAddresses == balance.byAddress.length) {
           self.setOngoingProcess();
         }
@@ -336,6 +332,16 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
   var selectFinanceOutput = function(fee, fc, assets, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
+
+      lodash.each(utxos, function(utxo) {
+        utxo.scriptPubKey = {
+          hex: utxo.scriptPubKey,
+          reqSigs: fc.credentials.m
+        };
+
+        UTXOList.add(utxo.txid, utxo);
+      });
+
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 
       var colorlessUtxos = lodash.reject(utxos, function(utxo) {
@@ -424,15 +430,6 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
       if (err) { return cb(err); }
 
-      UTXOList.add(financeUtxo.txid, {
-        txid: financeUtxo.txid, path: financeUtxo.path, index: financeUtxo.vout,
-        value: financeUtxo.satoshis, publicKeys: financeUtxo.publicKeys,
-        scriptPubKey: {
-          hex: financeUtxo.scriptPubKey,
-          reqSigs: fc.credentials.m
-        }
-      });
-
       var transfer = {
         from: asset.address,
         fee: fee,
@@ -490,7 +487,7 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
         var path = utxo.path;
         var pubKey = derivedPrivKeys[path].publicKey;
         var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
-        var from = {'txId': txid, outputIndex: utxo.index, satoshis: utxo.value, script: script };
+        var from = {'txId': txid, outputIndex: utxo.vout, satoshis: utxo.satoshis, script: script };
         tx.from(from, [pubKey], utxo.scriptPubKey.reqSigs);
       }
     };

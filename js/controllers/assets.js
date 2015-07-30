@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, UTXOList) {
+angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
   var self = this;
 
   this.assets = [];
@@ -22,10 +22,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
     balance.byAddress.forEach(function (ba) {
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
-        lodash.each(assets, function(a) {
-          a.asset.utxo.path = addressToPath[ba.address];
-          UTXOList.add(a.asset.utxo.txid, a.asset.utxo);
-        });
         if (++checkedAddresses == balance.byAddress.length) {
           self.setOngoingProcess();
         }
