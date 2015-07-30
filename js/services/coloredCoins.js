@@ -86,10 +86,13 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       if (err) { return cb(err); }
 
       lodash.each(utxos, function(utxo) {
-        utxo.scriptPubKey = {
+        var scriptPubKey = {
           hex: utxo.scriptPubKey,
           reqSigs: fc.credentials.m
         };
+
+        utxo = lodash.pick(utxo, ['txid', 'vout', 'satoshis', 'script', 'path']);
+        utxo.scriptPubKey = scriptPubKey;
 
         UTXOList.add(utxo.txid, utxo);
       });
