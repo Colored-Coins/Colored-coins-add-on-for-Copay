@@ -1,6 +1,6 @@
 'use strict';
 
-function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $log, lodash) {
+function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
     fee: 49000,
     api: {
@@ -11,6 +11,9 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
   var config = (configService.getSync()['coloredCoins'] || defaultConfig),
       root = {};
+
+  // UTXOs "cache"
+  root.txidToUTXO = {};
 
   var apiHost = function(network) {
     if (!config['api'] || ! config['api'][network]) {
@@ -85,11 +88,10 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
 
-      lodash.each(utxos, function(utxo) {
-        utxo.reqSigs = fc.credentials.m; //for ExternalTxSigner only
-
-        UTXOList.add(utxo.txid + ":" + utxo.vout, utxo);
-      });
+      root.txidToUTXO = lodash.reduce(utxos, function(result, utxo) {
+        result[utxo.txid + ":" + utxo.vout] = utxo;
+        return result;
+      }, {});
 
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 

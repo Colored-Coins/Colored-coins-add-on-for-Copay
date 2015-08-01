@@ -2,7 +2,7 @@
 
 angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
-                                              profileService, configService, lodash, bitcore, UTXOList) {
+                                              profileService, configService, lodash) {
   var self = this;
 
   this.assets = [];
@@ -193,7 +193,7 @@ angular.module('copayAddon.coloredCoins')
 
           var inputs = lodash.map(tx.inputs, function(input) {
             input = input.toObject();
-            input = UTXOList.get(input.prevTxId + ":" + input.outputIndex);
+            input = coloredCoins.txidToUTXO[input.prevTxId + ":" + input.outputIndex];
             input.outputIndex = input.vout;
             return input;
           });

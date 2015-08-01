@@ -20,7 +20,7 @@ module.config(function(addonManagerProvider) {
 
 angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
-                                              profileService, configService, lodash, bitcore, UTXOList) {
+                                              profileService, configService, lodash) {
   var self = this;
 
   this.assets = [];
@@ -211,7 +211,7 @@ angular.module('copayAddon.coloredCoins')
 
           var inputs = lodash.map(tx.inputs, function(input) {
             input = input.toObject();
-            input = UTXOList.get(input.prevTxId + ":" + input.outputIndex);
+            input = coloredCoins.txidToUTXO[input.prevTxId + ":" + input.outputIndex];
             input.outputIndex = input.vout;
             return input;
           });
@@ -317,23 +317,7 @@ angular.module('copayAddon.coloredCoins')
   });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').service('UTXOList', function() {
-  var root = {},
-      txidToUTXO = {};
-
-  root.add = function(txid, utxo) {
-    txidToUTXO[txid] = utxo;
-  };
-
-  root.get = function(txid) {
-    return txidToUTXO[txid];
-  };
-
-  return root;
-});
-'use strict';
-
-function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $log, lodash) {
+function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
     fee: 49000,
     api: {
@@ -344,6 +328,9 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
   var config = (configService.getSync()['coloredCoins'] || defaultConfig),
       root = {};
+
+  // UTXOs "cache"
+  root.txidToUTXO = {};
 
   var apiHost = function(network) {
     if (!config['api'] || ! config['api'][network]) {
@@ -418,11 +405,10 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
 
-      lodash.each(utxos, function(utxo) {
-        utxo.reqSigs = fc.credentials.m; //for ExternalTxSigner only
-
-        UTXOList.add(utxo.txid + ":" + utxo.vout, utxo);
-      });
+      root.txidToUTXO = lodash.reduce(utxos, function(result, utxo) {
+        result[utxo.txid + ":" + utxo.vout] = utxo;
+        return result;
+      }, {});
 
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 
