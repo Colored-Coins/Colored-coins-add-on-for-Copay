@@ -335,7 +335,7 @@ angular.module('copayAddon.coloredCoins').service('UTXOList', function() {
 
 function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $log, lodash) {
   var defaultConfig = {
-    fee: 1000,
+    fee: 49000,
     api: {
       testnet: 'testnet.api.coloredcoins.org',
       livenet: 'api.coloredcoins.org'
@@ -414,7 +414,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     });
   };
 
-  var selectFinanceOutput = function(fee, fc, assets, cb) {
+  var selectFinanceOutput = function(financeAmount, fc, assets, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
 
@@ -431,11 +431,11 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
 
       for (var i = 0; i < colorlessUtxos.length; i++) {
-        if (colorlessUtxos[i].satoshis >= fee) {
+        if (colorlessUtxos[i].satoshis >= financeAmount) {
           return cb(null, colorlessUtxos[i]);
         }
       }
-      return cb({ error: "Insufficient funds for fee" });
+      return cb({ error: "Insufficient funds to finance transfer" });
     });
   };
 
@@ -507,9 +507,10 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
     }
 
-    var fee = root.defaultFee();
+    // We need extra 600 satoshis if we have change transfer
+    var financeAmount = root.defaultFee() + 600 * (to.length - 1);
 
-    selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
+    selectFinanceOutput(financeAmount, fc, assets, function(err, financeUtxo) {
       if (err) { return cb(err); }
 
       var transfer = {
