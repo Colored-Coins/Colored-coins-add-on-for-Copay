@@ -58,7 +58,7 @@ angular.module('copayAddon.coloredCoins')
   this.openTransferModal = function(asset) {
 
     var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                           profileService, lodash, bitcore, externalTxSigner) {
+                                           profileService, lodash, bitcore, externalTxSigner, txStatus) {
       $scope.asset = asset;
 
       $scope.fee = coloredCoins.defaultFee();
@@ -143,6 +143,34 @@ angular.module('copayAddon.coloredCoins')
         }, 1);
       };
 
+      var _signAndBroadcast = function(txp, cb) {
+        var fc = profileService.focusedClient;
+        self.setOngoingProcess(gettext('Signing transaction'));
+        fc.signTxProposal(txp, function(err, signedTx) {
+          profileService.lockFC();
+          setOngoingProcess();
+          if (err) {
+            $log.debug('Sign error:', err);
+            err.message = gettext('The payment was created but could not be signed. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+            return cb(err);
+          }
+
+          console.log(signedTx);
+
+          if (signedTx.status == 'accepted') {
+            setOngoingProcess(gettext('Broadcasting transaction'));
+            console.log('Accepted');
+            return cb();
+          } else {
+            setOngoingProcess();
+            txStatus.notify(signedTx, function() {
+              $scope.$emit('Local/TxProposalAction');
+              return cb();
+            });
+          }
+        });
+      };
+
       $scope.transferAsset = function(transfer, form) {
         $log.debug("Asset: " + asset);
         $log.debug("Transfer: " + transfer);
@@ -203,6 +231,19 @@ angular.module('copayAddon.coloredCoins')
               return setTransferError(err);
             }
             console.log(txp);
+
+            _signAndBroadcast(txp, function(err) {
+              setOngoingProcess();
+              profileService.lockFC();
+              $scope.resetForm();
+              if (err) {
+                self.error = err.message ? err.message : gettext('Asset transfer was created but could not be completed. Please try again from home screen');
+                $scope.$emit('Local/TxProposalAction');
+                $timeout(function() {
+                  $scope.$digest();
+                }, 1);
+              }
+            });
           });
 
           return;
