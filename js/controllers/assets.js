@@ -1,11 +1,15 @@
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner) {
+angular.module('copayAddon.coloredCoins')
+    .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
+                                              profileService, configService, lodash, bitcore, externalTxSigner, UTXOList) {
   var self = this;
 
   this.assets = [];
 
   var addressToPath = {};
+
+  var config = configService.getSync().wallet.settings;
 
   this.setOngoingProcess = function(name) {
     $rootScope.$emit('Addon/OngoingProcess', name);
@@ -147,6 +151,43 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
           var tx = new bitcore.Transaction(result.txHex);
           $log.debug(JSON.stringify(tx.toObject(), null, 2));
 
+
+          var inputs = lodash.map(tx.inputs, function(input) {
+            input = UTXOList.get(input.toObject().prevTxId);
+            input.outputIndex = input.vout;
+            return input;
+          });
+
+          // drop change output provided by CC API. We want change output to be added by BWS in according with wallet's
+          // fee settings
+          var outputs = lodash.chain(tx.outputs)
+              .map(function(o) { return { script: o.script.toString(), amount: o.satoshis }; })
+              .dropRight()
+              .value();
+
+          // exclude change output to calculate spending amount
+          var amount = tx.outputAmount - tx.outputs[tx.outputs.length - 1].satoshis;
+
+          setOngoingProcess(gettext('Creating tx proposal'));
+          fc.sendTxProposal({
+            type: 'external',
+            toAddress: transfer._address,
+            inputs: inputs,
+            outputs: outputs,
+            amount: amount,
+            message: '',
+            payProUrl: null,
+            feePerKb: config.feeValue || 10000
+          }, function(err, txp) {
+            if (err) {
+              setOngoingProcess();
+              profileService.lockFC();
+              return setTransferError(err);
+            }
+            console.log(txp);
+          });
+
+          return;
           setOngoingProcess(gettext('Signing transaction'));
           externalTxSigner.sign(tx, fc.credentials);
 

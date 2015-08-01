@@ -17,26 +17,21 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
       return derived;
     };
 
-    this.convertInputsToP2SH = function(tx, derivedPrivKeys) {
+    this.convertInputsToP2SH = function(tx) {
       var inputs = tx.inputs;
       tx.inputs = [];
-      for (var i = 0; i < inputs.length; i++) {
-        var input = inputs[i];
+      lodash.each(inputs, function(input) {
         var txid = input.toObject().prevTxId;
         var utxo = UTXOList.get(txid);
-        var path = utxo.path;
-        var pubKey = derivedPrivKeys[path].publicKey;
-        var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
-        var from = {'txId': txid, outputIndex: utxo.vout, satoshis: utxo.satoshis, script: script };
-        tx.from(from, [pubKey], utxo.scriptPubKey.reqSigs);
-      }
+        tx.from(utxo, utxo.publicKeys, utxo.reqSigs);
+      });
     };
 
     this.sign = function(tx) {
       //Derive proper key to sign, for each input
       var derivedPrivKeys = this.derivePrivKeys(credentials.xPrivKey, credentials.network, tx);
 
-      this.convertInputsToP2SH(tx, derivedPrivKeys);
+      this.convertInputsToP2SH(tx);
 
       // sign each input
       lodash.each(lodash.values(derivedPrivKeys), function(privKey) {

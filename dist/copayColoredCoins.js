@@ -169,15 +169,29 @@ angular.module('copayAddon.coloredCoins')
           var tx = new bitcore.Transaction(result.txHex);
           $log.debug(JSON.stringify(tx.toObject(), null, 2));
 
-          lodash.each(tx.inputs, function(input) {
-            input.path = UTXOList.get(input.toObject().prevTxId).path;
+
+          var inputs = lodash.map(tx.inputs, function(input) {
+            input = UTXOList.get(input.toObject().prevTxId);
+            input.outputIndex = input.vout;
+            return input;
           });
+
+          // drop change output provided by CC API. We want change output to be added by BWS in according with wallet's
+          // fee settings
+          var outputs = lodash.chain(tx.outputs)
+              .map(function(o) { return { script: o.script.toString(), amount: o.satoshis }; })
+              .dropRight()
+              .value();
+
+          // exclude change output to calculate spending amount
           var amount = tx.outputAmount - tx.outputs[tx.outputs.length - 1].satoshis;
+
           setOngoingProcess(gettext('Creating tx proposal'));
           fc.sendTxProposal({
+            type: 'external',
             toAddress: transfer._address,
-            inputs: tx.inputs,
-            outputs: tx.outputs.map(function(o) { return { script: o.script, amount: o.satoshis } }),
+            inputs: inputs,
+            outputs: outputs,
             amount: amount,
             message: '',
             payProUrl: null,
@@ -361,13 +375,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       if (err) { return cb(err); }
 
       lodash.each(utxos, function(utxo) {
-        var scriptPubKey = {
-          hex: utxo.scriptPubKey,
-          reqSigs: fc.credentials.m
-        };
-
-        utxo = lodash.pick(utxo, ['txid', 'vout', 'satoshis', 'script', 'path']);
-        utxo.scriptPubKey = scriptPubKey;
+        utxo.reqSigs = fc.credentials.m; //for ExternalTxSigner only
 
         UTXOList.add(utxo.txid, utxo);
       });
@@ -507,26 +515,21 @@ angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(l
       return derived;
     };
 
-    this.convertInputsToP2SH = function(tx, derivedPrivKeys) {
+    this.convertInputsToP2SH = function(tx) {
       var inputs = tx.inputs;
       tx.inputs = [];
-      for (var i = 0; i < inputs.length; i++) {
-        var input = inputs[i];
+      lodash.each(inputs, function(input) {
         var txid = input.toObject().prevTxId;
         var utxo = UTXOList.get(txid);
-        var path = utxo.path;
-        var pubKey = derivedPrivKeys[path].publicKey;
-        var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
-        var from = {'txId': txid, outputIndex: utxo.vout, satoshis: utxo.satoshis, script: script };
-        tx.from(from, [pubKey], utxo.scriptPubKey.reqSigs);
-      }
+        tx.from(utxo, utxo.publicKeys, utxo.reqSigs);
+      });
     };
 
     this.sign = function(tx) {
       //Derive proper key to sign, for each input
       var derivedPrivKeys = this.derivePrivKeys(credentials.xPrivKey, credentials.network, tx);
 
-      this.convertInputsToP2SH(tx, derivedPrivKeys);
+      this.convertInputsToP2SH(tx);
 
       // sign each input
       lodash.each(lodash.values(derivedPrivKeys), function(privKey) {
