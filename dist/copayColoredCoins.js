@@ -159,7 +159,6 @@ angular.module('copayAddon.coloredCoins')
 
           if (signedTx.status == 'accepted') {
             setOngoingProcess(gettext('Broadcasting transaction'));
-            return cb();
             fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
               setOngoingProcess();
               if (err) {
@@ -233,6 +232,7 @@ angular.module('copayAddon.coloredCoins')
             toAddress: transfer._address,
             inputs: inputs,
             outputs: outputs,
+            noOutputsShuffle: true,
             amount: amount,
             message: '',
             payProUrl: null,

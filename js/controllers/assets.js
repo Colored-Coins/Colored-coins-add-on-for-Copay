@@ -214,6 +214,7 @@ angular.module('copayAddon.coloredCoins')
             toAddress: transfer._address,
             inputs: inputs,
             outputs: outputs,
+            noOutputsShuffle: true,
             amount: amount,
             message: '',
             payProUrl: null,
