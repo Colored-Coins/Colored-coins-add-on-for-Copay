@@ -2,7 +2,7 @@
 
 angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
-                                              profileService, configService, lodash, bitcore, externalTxSigner, UTXOList) {
+                                              profileService, configService, lodash, bitcore, UTXOList) {
   var self = this;
 
   this.assets = [];
@@ -40,7 +40,7 @@ angular.module('copayAddon.coloredCoins')
   this.openTransferModal = function(asset) {
 
     var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                           profileService, lodash, bitcore, externalTxSigner, txStatus) {
+                                           profileService, lodash, bitcore, txStatus) {
       $scope.asset = asset;
 
       $scope.fee = coloredCoins.defaultFee();
@@ -133,7 +133,7 @@ angular.module('copayAddon.coloredCoins')
           setOngoingProcess();
           if (err) {
             $log.debug('Sign error:', err);
-            err.message = gettext('The payment was created but could not be signed. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+            err.message = gettext('Asset transfer was created but could not be signed. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
             return cb(err);
           }
 
@@ -141,8 +141,20 @@ angular.module('copayAddon.coloredCoins')
 
           if (signedTx.status == 'accepted') {
             setOngoingProcess(gettext('Broadcasting transaction'));
-            console.log('Accepted');
-            return cb();
+            fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
+              setOngoingProcess();
+              if (err) {
+                err.message = gettext('Asset transfer was signed but could not be broadcasted. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+                return cb(err);
+              }
+              if (memo)
+                $log.info(memo);
+
+              txStatus.notify(btx, function() {
+                $scope.$emit('Local/TxProposalAction', true);
+                return cb();
+              });
+            });
           } else {
             setOngoingProcess();
             txStatus.notify(signedTx, function() {
@@ -154,8 +166,7 @@ angular.module('copayAddon.coloredCoins')
       };
 
       $scope.transferAsset = function(transfer, form) {
-        $log.debug("Asset: " + asset);
-        $log.debug("Transfer: " + transfer);
+        $log.debug("Transfering " + transfer._amount + " units(s) of asset " + asset.asset.assetId + " to " + transfer._address);
 
         var fc = profileService.focusedClient;
 
@@ -225,18 +236,8 @@ angular.module('copayAddon.coloredCoins')
                   $scope.$digest();
                 }, 1);
               }
+              $scope.cancel();
             });
-          });
-
-          return;
-          setOngoingProcess(gettext('Signing transaction'));
-          externalTxSigner.sign(tx, fc.credentials);
-
-          setOngoingProcess(gettext('Broadcasting transaction'));
-          coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
-            if (err) { return handleTransferError(err); }
-            $scope.cancel();
-            $rootScope.$emit('NewOutgoingTx');
           });
         });
       };
