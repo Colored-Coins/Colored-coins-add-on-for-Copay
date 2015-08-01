@@ -88,7 +88,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       lodash.each(utxos, function(utxo) {
         utxo.reqSigs = fc.credentials.m; //for ExternalTxSigner only
 
-        UTXOList.add(utxo.txid, utxo);
+        UTXOList.add(utxo.txid + ":" + utxo.vout, utxo);
       });
 
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });

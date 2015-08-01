@@ -159,6 +159,7 @@ angular.module('copayAddon.coloredCoins')
 
           if (signedTx.status == 'accepted') {
             setOngoingProcess(gettext('Broadcasting transaction'));
+            return cb();
             fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
               setOngoingProcess();
               if (err) {
@@ -210,7 +211,8 @@ angular.module('copayAddon.coloredCoins')
 
 
           var inputs = lodash.map(tx.inputs, function(input) {
-            input = UTXOList.get(input.toObject().prevTxId);
+            input = input.toObject();
+            input = UTXOList.get(input.prevTxId + ":" + input.outputIndex);
             input.outputIndex = input.vout;
             return input;
           });
@@ -419,7 +421,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       lodash.each(utxos, function(utxo) {
         utxo.reqSigs = fc.credentials.m; //for ExternalTxSigner only
 
-        UTXOList.add(utxo.txid, utxo);
+        UTXOList.add(utxo.txid + ":" + utxo.vout, utxo);
       });
 
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
@@ -538,56 +540,6 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
 angular.module('copayAddon.coloredCoins').service('coloredCoins', ColoredCoins);
 
-'use strict';
-
-angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(lodash, bitcore, UTXOList) {
-  var root = {};
-
-  function ExternalTxSigner(credentials) {
-
-    this.derivePrivKeys = function(xPriv, network, tx) {
-      var derived = {};
-      var xpriv = new bitcore.HDPrivateKey(xPriv, network).derive("m/45'");
-      for (var i = 0; i < tx.inputs.length; i++) {
-        var path = UTXOList.get(tx.inputs[i].toObject().prevTxId).path;
-        if (!derived[path]) {
-          derived[path] = xpriv.derive(path).privateKey;
-        }
-      }
-      return derived;
-    };
-
-    this.convertInputsToP2SH = function(tx) {
-      var inputs = tx.inputs;
-      tx.inputs = [];
-      lodash.each(inputs, function(input) {
-        var txid = input.toObject().prevTxId;
-        var utxo = UTXOList.get(txid);
-        tx.from(utxo, utxo.publicKeys, utxo.reqSigs);
-      });
-    };
-
-    this.sign = function(tx) {
-      //Derive proper key to sign, for each input
-      var derivedPrivKeys = this.derivePrivKeys(credentials.xPrivKey, credentials.network, tx);
-
-      this.convertInputsToP2SH(tx);
-
-      // sign each input
-      lodash.each(lodash.values(derivedPrivKeys), function(privKey) {
-        tx.sign(privKey);
-      });
-    };
-
-  }
-
-  root.sign = function(tx, credentials) {
-    return new ExternalTxSigner(credentials).sign(tx);
-  };
-
-
-  return root;
-});
 'use strict';
 
 

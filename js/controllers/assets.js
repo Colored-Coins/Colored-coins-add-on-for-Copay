@@ -192,7 +192,8 @@ angular.module('copayAddon.coloredCoins')
 
 
           var inputs = lodash.map(tx.inputs, function(input) {
-            input = UTXOList.get(input.toObject().prevTxId);
+            input = input.toObject();
+            input = UTXOList.get(input.prevTxId + ":" + input.outputIndex);
             input.outputIndex = input.vout;
             return input;
           });
