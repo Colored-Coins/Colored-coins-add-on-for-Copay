@@ -2,8 +2,8 @@
 
 var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates']);
 
-module.config(function(addonManagerProvider) {
-  addonManagerProvider.registerAddon({
+module.run(function(addonManager) {
+  addonManager.registerAddon({
     menuItem: {
       'title': 'Assets',
       'icon': 'icon-pricetag',
@@ -13,6 +13,16 @@ module.config(function(addonManagerProvider) {
       id: 'assets',
       'class': 'assets',
       template: 'colored-coins/views/assets.html'
+    },
+    formatPendingTxp: function(txp) {
+      if (txp.metadata && txp.metadata.asset) {
+        var value = txp.amountStr;
+        var asset = txp.metadata.asset;
+        txp.amountStr = asset.amount + " unit" + (asset.amount > 1 ? "s" : "") + " of " + asset.assetName + " (" + value + ")";
+        txp.showSingle = true;
+        txp.toAddress = txp.outputs[0].toAddress; // txproposal
+        txp.address = txp.outputs[0].address;     // txhistory
+      }
     }
   });
 });
@@ -236,7 +246,16 @@ angular.module('copayAddon.coloredCoins')
             amount: amount,
             message: '',
             payProUrl: null,
-            feePerKb: config.feeValue || 10000
+            feePerKb: config.feeValue || 10000,
+            metadata: {
+              asset: {
+                assetId: asset.asset.assetId,
+                assetName: asset.metadata.assetName,
+                icon: asset.icon,
+                utxo: lodash.pick(asset.utxo, ['txid', 'index']),
+                amount: transfer._amount
+              }
+            }
           }, function(err, txp) {
             if (err) {
               setOngoingProcess();
@@ -326,17 +345,20 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     }
   };
 
-  var config = (configService.getSync()['coloredCoins'] || defaultConfig),
-      root = {};
+  var root = {};
 
   // UTXOs "cache"
   root.txidToUTXO = {};
 
+  var _config = function() {
+    return configService.getSync()['coloredCoins'] || defaultConfig;
+  };
+
   var apiHost = function(network) {
-    if (!config['api'] || ! config['api'][network]) {
+    if (!_config()['api'] || ! _config()['api'][network]) {
       return defaultConfig.api[network];
     } else {
-      return config.api[network];
+      return _config().api[network];
     }
   };
 
@@ -388,7 +410,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
   };
 
   var getMetadata = function(asset, network, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, metadata){
+    getFrom('assetmetadata', root.assetUtxoId(asset), network, function(err, metadata){
       if (err) { return cb(err); }
       return cb(null, metadata);
     });
@@ -432,8 +454,12 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
   root.init = function() {};
 
+  root.assetUtxoId = function(asset) {
+    return asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index;
+  };
+
   root.defaultFee = function() {
-    return config.fee || defaultConfig.fee;
+    return _config().fee || defaultConfig.fee;
   };
 
   root.getAssets = function(address, cb) {
@@ -446,7 +472,9 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
-          assets.push({
+          var a = {
+            assetId: asset.assetId,
+            utxo: asset.utxo,
             address: address,
             asset: asset,
             network: network,
@@ -454,7 +482,8 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
-          });
+          };
+          assets.push(a);
           if (assetsInfo.length == assets.length) {
             return cb(assets);
           }

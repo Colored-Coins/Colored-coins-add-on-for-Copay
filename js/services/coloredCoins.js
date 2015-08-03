@@ -9,17 +9,20 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     }
   };
 
-  var config = (configService.getSync()['coloredCoins'] || defaultConfig),
-      root = {};
+  var root = {};
 
   // UTXOs "cache"
   root.txidToUTXO = {};
 
+  var _config = function() {
+    return configService.getSync()['coloredCoins'] || defaultConfig;
+  };
+
   var apiHost = function(network) {
-    if (!config['api'] || ! config['api'][network]) {
+    if (!_config()['api'] || ! _config()['api'][network]) {
       return defaultConfig.api[network];
     } else {
-      return config.api[network];
+      return _config().api[network];
     }
   };
 
@@ -71,7 +74,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
   };
 
   var getMetadata = function(asset, network, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, metadata){
+    getFrom('assetmetadata', root.assetUtxoId(asset), network, function(err, metadata){
       if (err) { return cb(err); }
       return cb(null, metadata);
     });
@@ -115,8 +118,12 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
   root.init = function() {};
 
+  root.assetUtxoId = function(asset) {
+    return asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index;
+  };
+
   root.defaultFee = function() {
-    return config.fee || defaultConfig.fee;
+    return _config().fee || defaultConfig.fee;
   };
 
   root.getAssets = function(address, cb) {
@@ -129,7 +136,9 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
-          assets.push({
+          var a = {
+            assetId: asset.assetId,
+            utxo: asset.utxo,
             address: address,
             asset: asset,
             network: network,
@@ -137,7 +146,8 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
-          });
+          };
+          assets.push(a);
           if (assetsInfo.length == assets.length) {
             return cb(assets);
           }

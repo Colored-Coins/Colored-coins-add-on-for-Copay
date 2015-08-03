@@ -218,7 +218,16 @@ angular.module('copayAddon.coloredCoins')
             amount: amount,
             message: '',
             payProUrl: null,
-            feePerKb: config.feeValue || 10000
+            feePerKb: config.feeValue || 10000,
+            metadata: {
+              asset: {
+                assetId: asset.asset.assetId,
+                assetName: asset.metadata.assetName,
+                icon: asset.icon,
+                utxo: lodash.pick(asset.utxo, ['txid', 'index']),
+                amount: transfer._amount
+              }
+            }
           }, function(err, txp) {
             if (err) {
               setOngoingProcess();
