@@ -184,7 +184,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
       var transfer = {
         from: asset.address,
-        fee: fee,
+        fee: root.defaultFee(),
         to: to,
         financeOutput: {
           value: financeUtxo.satoshis,
