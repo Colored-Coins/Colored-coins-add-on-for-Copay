@@ -2,8 +2,8 @@
 
 var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates']);
 
-module.config(function(addonManagerProvider) {
-  addonManagerProvider.registerAddon({
+module.run(function(addonManager) {
+  addonManager.registerAddon({
     menuItem: {
       'title': 'Assets',
       'icon': 'icon-pricetag',
@@ -13,17 +13,31 @@ module.config(function(addonManagerProvider) {
       id: 'assets',
       'class': 'assets',
       template: 'colored-coins/views/assets.html'
+    },
+    formatPendingTxp: function(txp) {
+      if (txp.metadata && txp.metadata.asset) {
+        var value = txp.amountStr;
+        var asset = txp.metadata.asset;
+        txp.amountStr = asset.amount + " unit" + (asset.amount > 1 ? "s" : "") + " of " + asset.assetName + " (" + value + ")";
+        txp.showSingle = true;
+        txp.toAddress = txp.outputs[0].toAddress; // txproposal
+        txp.address = txp.outputs[0].address;     // txhistory
+      }
     }
   });
 });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, UTXOList) {
+angular.module('copayAddon.coloredCoins')
+    .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
+                                              profileService, configService, lodash) {
   var self = this;
 
   this.assets = [];
 
   var addressToPath = {};
+
+  var config = configService.getSync().wallet.settings;
 
   this.setOngoingProcess = function(name) {
     $rootScope.$emit('Addon/OngoingProcess', name);
@@ -40,10 +54,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
     balance.byAddress.forEach(function (ba) {
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
-        lodash.each(assets, function(a) {
-          a.asset.utxo.path = addressToPath[ba.address];
-          UTXOList.add(a.asset.utxo.txid, a.asset.utxo);
-        });
         if (++checkedAddresses == balance.byAddress.length) {
           self.setOngoingProcess();
         }
@@ -58,7 +68,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
   this.openTransferModal = function(asset) {
 
     var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                           profileService, lodash, bitcore, externalTxSigner) {
+                                           profileService, lodash, bitcore, txStatus) {
       $scope.asset = asset;
 
       $scope.fee = coloredCoins.defaultFee();
@@ -143,9 +153,48 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         }, 1);
       };
 
+      var _signAndBroadcast = function(txp, cb) {
+        var fc = profileService.focusedClient;
+        self.setOngoingProcess(gettext('Signing transaction'));
+        fc.signTxProposal(txp, function(err, signedTx) {
+          profileService.lockFC();
+          setOngoingProcess();
+          if (err) {
+            $log.debug('Sign error:', err);
+            err.message = gettext('Asset transfer was created but could not be signed. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+            return cb(err);
+          }
+
+          console.log(signedTx);
+
+          if (signedTx.status == 'accepted') {
+            setOngoingProcess(gettext('Broadcasting transaction'));
+            fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
+              setOngoingProcess();
+              if (err) {
+                err.message = gettext('Asset transfer was signed but could not be broadcasted. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+                return cb(err);
+              }
+              if (memo)
+                $log.info(memo);
+
+              txStatus.notify(btx, function() {
+                $scope.$emit('Local/TxProposalAction', true);
+                return cb();
+              });
+            });
+          } else {
+            setOngoingProcess();
+            txStatus.notify(signedTx, function() {
+              $scope.$emit('Local/TxProposalAction');
+              return cb();
+            });
+          }
+        });
+      };
+
       $scope.transferAsset = function(transfer, form) {
-        $log.debug("Asset: " + asset);
-        $log.debug("Transfer: " + transfer);
+        $log.debug("Transfering " + transfer._amount + " units(s) of asset " + asset.asset.assetId + " to " + transfer._address);
 
         var fc = profileService.focusedClient;
 
@@ -169,14 +218,65 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
           var tx = new bitcore.Transaction(result.txHex);
           $log.debug(JSON.stringify(tx.toObject(), null, 2));
 
-          setOngoingProcess(gettext('Signing transaction'));
-          externalTxSigner.sign(tx, fc.credentials);
 
-          setOngoingProcess(gettext('Broadcasting transaction'));
-          coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
-            if (err) { return handleTransferError(err); }
-            $scope.cancel();
-            $rootScope.$emit('NewOutgoingTx');
+          var inputs = lodash.map(tx.inputs, function(input) {
+            input = input.toObject();
+            input = coloredCoins.txidToUTXO[input.prevTxId + ":" + input.outputIndex];
+            input.outputIndex = input.vout;
+            return input;
+          });
+
+          // drop change output provided by CC API. We want change output to be added by BWS in according with wallet's
+          // fee settings
+          var outputs = lodash.chain(tx.outputs)
+              .map(function(o) { return { script: o.script.toString(), amount: o.satoshis }; })
+              .dropRight()
+              .value();
+
+          // exclude change output to calculate spending amount
+          var amount = tx.outputAmount - tx.outputs[tx.outputs.length - 1].satoshis;
+
+          setOngoingProcess(gettext('Creating tx proposal'));
+          fc.sendTxProposal({
+            type: 'external',
+            toAddress: transfer._address,
+            inputs: inputs,
+            outputs: outputs,
+            noOutputsShuffle: true,
+            amount: amount,
+            message: '',
+            payProUrl: null,
+            feePerKb: config.feeValue || 10000,
+            metadata: {
+              asset: {
+                assetId: asset.asset.assetId,
+                assetName: asset.metadata.assetName,
+                icon: asset.icon,
+                utxo: lodash.pick(asset.utxo, ['txid', 'index']),
+                amount: transfer._amount
+              }
+            }
+          }, function(err, txp) {
+            if (err) {
+              setOngoingProcess();
+              profileService.lockFC();
+              return setTransferError(err);
+            }
+            console.log(txp);
+
+            _signAndBroadcast(txp, function(err) {
+              setOngoingProcess();
+              profileService.lockFC();
+              $scope.resetForm();
+              if (err) {
+                self.error = err.message ? err.message : gettext('Asset transfer was created but could not be completed. Please try again from home screen');
+                $scope.$emit('Local/TxProposalAction');
+                $timeout(function() {
+                  $scope.$digest();
+                }, 1);
+              }
+              $scope.cancel();
+            });
           });
         });
       };
@@ -236,39 +336,29 @@ angular.module('copayAddon.coloredCoins')
   });
 'use strict';
 
-angular.module('copayAddon.coloredCoins').service('UTXOList', function() {
-  var root = {},
-      txidToUTXO = {};
-
-  root.add = function(txid, utxo) {
-    txidToUTXO[txid] = utxo;
-  };
-
-  root.get = function(txid) {
-    return txidToUTXO[txid];
-  };
-
-  return root;
-});
-'use strict';
-
-function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $log, lodash) {
+function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
-    fee: 1000,
+    fee: 49000,
     api: {
       testnet: 'testnet.api.coloredcoins.org',
       livenet: 'api.coloredcoins.org'
     }
   };
 
-  var config = (configService.getSync()['coloredCoins'] || defaultConfig),
-      root = {};
+  var root = {};
+
+  // UTXOs "cache"
+  root.txidToUTXO = {};
+
+  var _config = function() {
+    return configService.getSync()['coloredCoins'] || defaultConfig;
+  };
 
   var apiHost = function(network) {
-    if (!config['api'] || ! config['api'][network]) {
+    if (!_config()['api'] || ! _config()['api'][network]) {
       return defaultConfig.api[network];
     } else {
-      return config.api[network];
+      return _config().api[network];
     }
   };
 
@@ -320,7 +410,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
   };
 
   var getMetadata = function(asset, network, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, metadata){
+    getFrom('assetmetadata', root.assetUtxoId(asset), network, function(err, metadata){
       if (err) { return cb(err); }
       return cb(null, metadata);
     });
@@ -333,9 +423,15 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     });
   };
 
-  var selectFinanceOutput = function(fee, fc, assets, cb) {
+  var selectFinanceOutput = function(financeAmount, fc, assets, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
+
+      root.txidToUTXO = lodash.reduce(utxos, function(result, utxo) {
+        result[utxo.txid + ":" + utxo.vout] = utxo;
+        return result;
+      }, {});
+
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 
       var colorlessUtxos = lodash.reject(utxos, function(utxo) {
@@ -343,11 +439,11 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
 
       for (var i = 0; i < colorlessUtxos.length; i++) {
-        if (colorlessUtxos[i].satoshis >= fee) {
+        if (colorlessUtxos[i].satoshis >= financeAmount) {
           return cb(null, colorlessUtxos[i]);
         }
       }
-      return cb({ error: "Insufficient funds for fee" });
+      return cb({ error: "Insufficient funds to finance transfer" });
     });
   };
 
@@ -358,8 +454,12 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
   root.init = function() {};
 
+  root.assetUtxoId = function(asset) {
+    return asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index;
+  };
+
   root.defaultFee = function() {
-    return config.fee || defaultConfig.fee;
+    return _config().fee || defaultConfig.fee;
   };
 
   root.getAssets = function(address, cb) {
@@ -372,7 +472,9 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
-          assets.push({
+          var a = {
+            assetId: asset.assetId,
+            utxo: asset.utxo,
             address: address,
             asset: asset,
             network: network,
@@ -380,7 +482,8 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
-          });
+          };
+          assets.push(a);
           if (assetsInfo.length == assets.length) {
             return cb(assets);
           }
@@ -419,23 +522,15 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
     }
 
-    var fee = root.defaultFee();
+    // We need extra 600 satoshis if we have change transfer
+    var financeAmount = root.defaultFee() + 600 * (to.length - 1);
 
-    selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
+    selectFinanceOutput(financeAmount, fc, assets, function(err, financeUtxo) {
       if (err) { return cb(err); }
-
-      UTXOList.add(financeUtxo.txid, {
-        txid: financeUtxo.txid, path: financeUtxo.path, index: financeUtxo.vout,
-        value: financeUtxo.satoshis, publicKeys: financeUtxo.publicKeys,
-        scriptPubKey: {
-          hex: financeUtxo.scriptPubKey,
-          reqSigs: fc.credentials.m
-        }
-      });
 
       var transfer = {
         from: asset.address,
-        fee: fee,
+        fee: root.defaultFee(),
         to: to,
         financeOutput: {
           value: financeUtxo.satoshis,
@@ -461,61 +556,6 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
 angular.module('copayAddon.coloredCoins').service('coloredCoins', ColoredCoins);
 
-'use strict';
-
-angular.module('copayAddon.coloredCoins').service('externalTxSigner', function(lodash, bitcore, UTXOList) {
-  var root = {};
-
-  function ExternalTxSigner(credentials) {
-
-    this.derivePrivKeys = function(xPriv, network, tx) {
-      var derived = {};
-      var xpriv = new bitcore.HDPrivateKey(xPriv, network).derive("m/45'");
-      for (var i = 0; i < tx.inputs.length; i++) {
-        var path = UTXOList.get(tx.inputs[i].toObject().prevTxId).path;
-        if (!derived[path]) {
-          derived[path] = xpriv.derive(path).privateKey;
-        }
-      }
-      return derived;
-    };
-
-    this.convertInputsToP2SH = function(tx, derivedPrivKeys) {
-      var inputs = tx.inputs;
-      tx.inputs = [];
-      for (var i = 0; i < inputs.length; i++) {
-        var input = inputs[i];
-        var txid = input.toObject().prevTxId;
-        var utxo = UTXOList.get(txid);
-        var path = utxo.path;
-        var pubKey = derivedPrivKeys[path].publicKey;
-        var script = new bitcore.Script(utxo.scriptPubKey.hex).toString();
-        var from = {'txId': txid, outputIndex: utxo.index, satoshis: utxo.value, script: script };
-        tx.from(from, [pubKey], utxo.scriptPubKey.reqSigs);
-      }
-    };
-
-    this.sign = function(tx) {
-      //Derive proper key to sign, for each input
-      var derivedPrivKeys = this.derivePrivKeys(credentials.xPrivKey, credentials.network, tx);
-
-      this.convertInputsToP2SH(tx, derivedPrivKeys);
-
-      // sign each input
-      lodash.each(lodash.values(derivedPrivKeys), function(privKey) {
-        tx.sign(privKey);
-      });
-    };
-
-  }
-
-  root.sign = function(tx, credentials) {
-    return new ExternalTxSigner(credentials).sign(tx);
-  };
-
-
-  return root;
-});
 'use strict';
 
 

@@ -1,22 +1,28 @@
 'use strict';
 
-function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $log, lodash) {
+function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
-    fee: 1000,
+    fee: 49000,
     api: {
       testnet: 'testnet.api.coloredcoins.org',
       livenet: 'api.coloredcoins.org'
     }
   };
 
-  var config = (configService.getSync()['coloredCoins'] || defaultConfig),
-      root = {};
+  var root = {};
+
+  // UTXOs "cache"
+  root.txidToUTXO = {};
+
+  var _config = function() {
+    return configService.getSync()['coloredCoins'] || defaultConfig;
+  };
 
   var apiHost = function(network) {
-    if (!config['api'] || ! config['api'][network]) {
+    if (!_config()['api'] || ! _config()['api'][network]) {
       return defaultConfig.api[network];
     } else {
-      return config.api[network];
+      return _config().api[network];
     }
   };
 
@@ -68,7 +74,7 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
   };
 
   var getMetadata = function(asset, network, cb) {
-    getFrom('assetmetadata', asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index, network, function(err, metadata){
+    getFrom('assetmetadata', root.assetUtxoId(asset), network, function(err, metadata){
       if (err) { return cb(err); }
       return cb(null, metadata);
     });
@@ -81,9 +87,15 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
     });
   };
 
-  var selectFinanceOutput = function(fee, fc, assets, cb) {
+  var selectFinanceOutput = function(financeAmount, fc, assets, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
+
+      root.txidToUTXO = lodash.reduce(utxos, function(result, utxo) {
+        result[utxo.txid + ":" + utxo.vout] = utxo;
+        return result;
+      }, {});
+
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 
       var colorlessUtxos = lodash.reject(utxos, function(utxo) {
@@ -91,11 +103,11 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
 
       for (var i = 0; i < colorlessUtxos.length; i++) {
-        if (colorlessUtxos[i].satoshis >= fee) {
+        if (colorlessUtxos[i].satoshis >= financeAmount) {
           return cb(null, colorlessUtxos[i]);
         }
       }
-      return cb({ error: "Insufficient funds for fee" });
+      return cb({ error: "Insufficient funds to finance transfer" });
     });
   };
 
@@ -106,8 +118,12 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
 
   root.init = function() {};
 
+  root.assetUtxoId = function(asset) {
+    return asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index;
+  };
+
   root.defaultFee = function() {
-    return config.fee || defaultConfig.fee;
+    return _config().fee || defaultConfig.fee;
   };
 
   root.getAssets = function(address, cb) {
@@ -120,7 +136,9 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
-          assets.push({
+          var a = {
+            assetId: asset.assetId,
+            utxo: asset.utxo,
             address: address,
             asset: asset,
             network: network,
@@ -128,7 +146,8 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
             metadata: metadata.metadataOfIssuence.data
-          });
+          };
+          assets.push(a);
           if (assetsInfo.length == assets.length) {
             return cb(assets);
           }
@@ -167,23 +186,15 @@ function ColoredCoins(profileService, configService, bitcore, UTXOList, $http, $
       });
     }
 
-    var fee = root.defaultFee();
+    // We need extra 600 satoshis if we have change transfer
+    var financeAmount = root.defaultFee() + 600 * (to.length - 1);
 
-    selectFinanceOutput(fee, fc, assets, function(err, financeUtxo) {
+    selectFinanceOutput(financeAmount, fc, assets, function(err, financeUtxo) {
       if (err) { return cb(err); }
-
-      UTXOList.add(financeUtxo.txid, {
-        txid: financeUtxo.txid, path: financeUtxo.path, index: financeUtxo.vout,
-        value: financeUtxo.satoshis, publicKeys: financeUtxo.publicKeys,
-        scriptPubKey: {
-          hex: financeUtxo.scriptPubKey,
-          reqSigs: fc.credentials.m
-        }
-      });
 
       var transfer = {
         from: asset.address,
-        fee: fee,
+        fee: root.defaultFee(),
         to: to,
         financeOutput: {
           value: financeUtxo.satoshis,

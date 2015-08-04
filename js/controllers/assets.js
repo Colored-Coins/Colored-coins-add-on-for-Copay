@@ -1,11 +1,15 @@
 'use strict';
 
-angular.module('copayAddon.coloredCoins').controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext, profileService, lodash, bitcore, externalTxSigner, UTXOList) {
+angular.module('copayAddon.coloredCoins')
+    .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
+                                              profileService, configService, lodash) {
   var self = this;
 
   this.assets = [];
 
   var addressToPath = {};
+
+  var config = configService.getSync().wallet.settings;
 
   this.setOngoingProcess = function(name) {
     $rootScope.$emit('Addon/OngoingProcess', name);
@@ -22,10 +26,6 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
     balance.byAddress.forEach(function (ba) {
       coloredCoins.getAssets(ba.address, function (assets) {
         self.assets = self.assets.concat(assets);
-        lodash.each(assets, function(a) {
-          a.asset.utxo.path = addressToPath[ba.address];
-          UTXOList.add(a.asset.utxo.txid, a.asset.utxo);
-        });
         if (++checkedAddresses == balance.byAddress.length) {
           self.setOngoingProcess();
         }
@@ -40,7 +40,7 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
   this.openTransferModal = function(asset) {
 
     var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                           profileService, lodash, bitcore, externalTxSigner) {
+                                           profileService, lodash, bitcore, txStatus) {
       $scope.asset = asset;
 
       $scope.fee = coloredCoins.defaultFee();
@@ -125,9 +125,48 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
         }, 1);
       };
 
+      var _signAndBroadcast = function(txp, cb) {
+        var fc = profileService.focusedClient;
+        self.setOngoingProcess(gettext('Signing transaction'));
+        fc.signTxProposal(txp, function(err, signedTx) {
+          profileService.lockFC();
+          setOngoingProcess();
+          if (err) {
+            $log.debug('Sign error:', err);
+            err.message = gettext('Asset transfer was created but could not be signed. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+            return cb(err);
+          }
+
+          console.log(signedTx);
+
+          if (signedTx.status == 'accepted') {
+            setOngoingProcess(gettext('Broadcasting transaction'));
+            fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
+              setOngoingProcess();
+              if (err) {
+                err.message = gettext('Asset transfer was signed but could not be broadcasted. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+                return cb(err);
+              }
+              if (memo)
+                $log.info(memo);
+
+              txStatus.notify(btx, function() {
+                $scope.$emit('Local/TxProposalAction', true);
+                return cb();
+              });
+            });
+          } else {
+            setOngoingProcess();
+            txStatus.notify(signedTx, function() {
+              $scope.$emit('Local/TxProposalAction');
+              return cb();
+            });
+          }
+        });
+      };
+
       $scope.transferAsset = function(transfer, form) {
-        $log.debug("Asset: " + asset);
-        $log.debug("Transfer: " + transfer);
+        $log.debug("Transfering " + transfer._amount + " units(s) of asset " + asset.asset.assetId + " to " + transfer._address);
 
         var fc = profileService.focusedClient;
 
@@ -151,14 +190,65 @@ angular.module('copayAddon.coloredCoins').controller('assetsController', functio
           var tx = new bitcore.Transaction(result.txHex);
           $log.debug(JSON.stringify(tx.toObject(), null, 2));
 
-          setOngoingProcess(gettext('Signing transaction'));
-          externalTxSigner.sign(tx, fc.credentials);
 
-          setOngoingProcess(gettext('Broadcasting transaction'));
-          coloredCoins.broadcastTx(tx.uncheckedSerialize(), function(err, body) {
-            if (err) { return handleTransferError(err); }
-            $scope.cancel();
-            $rootScope.$emit('NewOutgoingTx');
+          var inputs = lodash.map(tx.inputs, function(input) {
+            input = input.toObject();
+            input = coloredCoins.txidToUTXO[input.prevTxId + ":" + input.outputIndex];
+            input.outputIndex = input.vout;
+            return input;
+          });
+
+          // drop change output provided by CC API. We want change output to be added by BWS in according with wallet's
+          // fee settings
+          var outputs = lodash.chain(tx.outputs)
+              .map(function(o) { return { script: o.script.toString(), amount: o.satoshis }; })
+              .dropRight()
+              .value();
+
+          // exclude change output to calculate spending amount
+          var amount = tx.outputAmount - tx.outputs[tx.outputs.length - 1].satoshis;
+
+          setOngoingProcess(gettext('Creating tx proposal'));
+          fc.sendTxProposal({
+            type: 'external',
+            toAddress: transfer._address,
+            inputs: inputs,
+            outputs: outputs,
+            noOutputsShuffle: true,
+            amount: amount,
+            message: '',
+            payProUrl: null,
+            feePerKb: config.feeValue || 10000,
+            metadata: {
+              asset: {
+                assetId: asset.asset.assetId,
+                assetName: asset.metadata.assetName,
+                icon: asset.icon,
+                utxo: lodash.pick(asset.utxo, ['txid', 'index']),
+                amount: transfer._amount
+              }
+            }
+          }, function(err, txp) {
+            if (err) {
+              setOngoingProcess();
+              profileService.lockFC();
+              return setTransferError(err);
+            }
+            console.log(txp);
+
+            _signAndBroadcast(txp, function(err) {
+              setOngoingProcess();
+              profileService.lockFC();
+              $scope.resetForm();
+              if (err) {
+                self.error = err.message ? err.message : gettext('Asset transfer was created but could not be completed. Please try again from home screen');
+                $scope.$emit('Local/TxProposalAction');
+                $timeout(function() {
+                  $scope.$digest();
+                }, 1);
+              }
+              $scope.cancel();
+            });
           });
         });
       };
