@@ -23,13 +23,15 @@ angular.module('copayAddon.coloredCoins')
     }
 
     var checkedAddresses = 0;
-    balance.byAddress.forEach(function (ba) {
-      coloredCoins.getAssets(ba.address, function (assets) {
-        self.assets = self.assets.concat(assets);
-        if (++checkedAddresses == balance.byAddress.length) {
-          self.setOngoingProcess();
-        }
-      })
+    coloredCoins.updateLockedUtxos(function(lockedUtxos) {
+      balance.byAddress.forEach(function (ba) {
+        coloredCoins.getAssets(ba.address, function (assets) {
+          self.assets = self.assets.concat(assets);
+          if (++checkedAddresses == balance.byAddress.length) {
+            self.setOngoingProcess();
+          }
+        })
+      });
     });
   });
 
@@ -166,6 +168,10 @@ angular.module('copayAddon.coloredCoins')
       };
 
       $scope.transferAsset = function(transfer, form) {
+        if (asset.locked) {
+          setTransferError({ message: "Cannot transfer locked asset" });
+          return;
+        }
         $log.debug("Transfering " + transfer._amount + " units(s) of asset " + asset.asset.assetId + " to " + transfer._address);
 
         var fc = profileService.focusedClient;

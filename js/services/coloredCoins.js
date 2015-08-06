@@ -13,6 +13,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
   // UTXOs "cache"
   root.txidToUTXO = {};
+  root.lockedUtxos = [];
 
   var _config = function() {
     return configService.getSync()['coloredCoins'] || defaultConfig;
@@ -87,9 +88,18 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     });
   };
 
+  var _setLockedUtxos = function(utxos) {
+    root.lockedUtxos = lodash.chain(utxos)
+        .filter('locked')
+        .map(function(utxo) { return utxo.txid + ":" + utxo.vout; })
+        .value();
+  };
+
   var selectFinanceOutput = function(financeAmount, fc, assets, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
+
+      _setLockedUtxos(utxos);
 
       root.txidToUTXO = lodash.reduce(utxos, function(result, utxo) {
         result[utxo.txid + ":" + utxo.vout] = utxo;
@@ -98,13 +108,13 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 
-      var colorlessUtxos = lodash.reject(utxos, function(utxo) {
-        return lodash.includes(coloredUtxos, utxo.txid + ":" + utxo.vout);
+      var colorlessUnlockedUtxos = lodash.reject(utxos, function(utxo) {
+        return lodash.includes(coloredUtxos, utxo.txid + ":" + utxo.vout) || utxo.locked;
       });
 
-      for (var i = 0; i < colorlessUtxos.length; i++) {
-        if (colorlessUtxos[i].satoshis >= financeAmount) {
-          return cb(null, colorlessUtxos[i]);
+      for (var i = 0; i < colorlessUnlockedUtxos.length; i++) {
+        if (colorlessUnlockedUtxos[i].satoshis >= financeAmount) {
+          return cb(null, colorlessUnlockedUtxos[i]);
         }
       }
       return cb({ error: "Insufficient funds to finance transfer" });
@@ -126,6 +136,15 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     return _config().fee || defaultConfig.fee;
   };
 
+  root.updateLockedUtxos = function(cb) {
+    var fc = profileService.focusedClient;
+    fc.getUtxos(function(err, utxos) {
+      if (err) { return cb(err); }
+      _setLockedUtxos(utxos);
+      cb(null, root.lockedUtxos);
+    });
+  };
+
   root.getAssets = function(address, cb) {
     var network = profileService.focusedClient.credentials.network;
     getAssetsByAddress(address, network, function(err, assetsInfo) {
@@ -136,6 +155,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
+          var isLocked = lodash.includes(root.lockedUtxos, asset.utxo.txid + ":" + asset.utxo.index);
           var a = {
             assetId: asset.assetId,
             utxo: asset.utxo,
@@ -145,7 +165,8 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
             divisible: metadata.divisibility,
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
-            metadata: metadata.metadataOfIssuence.data
+            metadata: metadata.metadataOfIssuence.data,
+            locked: isLocked
           };
           assets.push(a);
           if (assetsInfo.length == assets.length) {

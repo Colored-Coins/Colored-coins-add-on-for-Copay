@@ -13,6 +13,15 @@
 </nav>
 
 <div class="modal-content">
+    <div ng-show="asset.locked">
+        <h4 class="title m0">
+            <div class="asset-alert">
+                <i class="fi-info"></i>
+                <span translate>Asset locked by pending transfer</span>
+            </div>
+        </h4>
+    </div>
+
     <div class="header-modal text-center">
         <img ng-src="{{ asset.icon }}" class="asset-image" ng-show="asset.icon"/>
         <div class="size-42">
@@ -25,7 +34,7 @@
 
     <div>
         <div class="text-center m20t">
-            <button class="button outline round light-gray tiny" ng-click="openTransferModal(asset)">
+            <button class="button outline round light-gray tiny" ng-click="openTransferModal(asset)" ng-disabled="asset.locked">
                 <span class="text-primary" translate>Transfer</span>
             </button>
         </div>

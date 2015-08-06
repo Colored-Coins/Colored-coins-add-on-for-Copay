@@ -38,3 +38,14 @@
         border-radius: 50%;
         height: 25px;
     }
+
+.asset-alert i {
+    margin-right: 10px;
+    margin-top: -8px;
+    float: left;
+    font-size: 24px;
+}
+
+.asset-alert span {
+    font-size: 10px;
+}

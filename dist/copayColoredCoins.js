@@ -51,13 +51,15 @@ angular.module('copayAddon.coloredCoins')
     }
 
     var checkedAddresses = 0;
-    balance.byAddress.forEach(function (ba) {
-      coloredCoins.getAssets(ba.address, function (assets) {
-        self.assets = self.assets.concat(assets);
-        if (++checkedAddresses == balance.byAddress.length) {
-          self.setOngoingProcess();
-        }
-      })
+    coloredCoins.updateLockedUtxos(function(lockedUtxos) {
+      balance.byAddress.forEach(function (ba) {
+        coloredCoins.getAssets(ba.address, function (assets) {
+          self.assets = self.assets.concat(assets);
+          if (++checkedAddresses == balance.byAddress.length) {
+            self.setOngoingProcess();
+          }
+        })
+      });
     });
   });
 
@@ -194,6 +196,10 @@ angular.module('copayAddon.coloredCoins')
       };
 
       $scope.transferAsset = function(transfer, form) {
+        if (asset.locked) {
+          setTransferError({ message: "Cannot transfer locked asset" });
+          return;
+        }
         $log.debug("Transfering " + transfer._amount + " units(s) of asset " + asset.asset.assetId + " to " + transfer._address);
 
         var fc = profileService.focusedClient;
@@ -327,15 +333,6 @@ angular.module('copayAddon.coloredCoins')
   });
 'use strict';
 
-angular.module('copayAddon.coloredCoins')
-  .filter('stringify', function($sce) {
-    return function(json) {
-      json = json || [];
-      return $sce.trustAsHtml(JSON.stringify(json, null, 4).replace(/\n/g, '<br>'));
-    }
-  });
-'use strict';
-
 function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
     fee: 49000,
@@ -349,6 +346,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
   // UTXOs "cache"
   root.txidToUTXO = {};
+  root.lockedUtxos = [];
 
   var _config = function() {
     return configService.getSync()['coloredCoins'] || defaultConfig;
@@ -423,9 +421,18 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     });
   };
 
+  var _setLockedUtxos = function(utxos) {
+    root.lockedUtxos = lodash.chain(utxos)
+        .filter('locked')
+        .map(function(utxo) { return utxo.txid + ":" + utxo.vout; })
+        .value();
+  };
+
   var selectFinanceOutput = function(financeAmount, fc, assets, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
+
+      _setLockedUtxos(utxos);
 
       root.txidToUTXO = lodash.reduce(utxos, function(result, utxo) {
         result[utxo.txid + ":" + utxo.vout] = utxo;
@@ -434,13 +441,13 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
       var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
 
-      var colorlessUtxos = lodash.reject(utxos, function(utxo) {
-        return lodash.includes(coloredUtxos, utxo.txid + ":" + utxo.vout);
+      var colorlessUnlockedUtxos = lodash.reject(utxos, function(utxo) {
+        return lodash.includes(coloredUtxos, utxo.txid + ":" + utxo.vout) || utxo.locked;
       });
 
-      for (var i = 0; i < colorlessUtxos.length; i++) {
-        if (colorlessUtxos[i].satoshis >= financeAmount) {
-          return cb(null, colorlessUtxos[i]);
+      for (var i = 0; i < colorlessUnlockedUtxos.length; i++) {
+        if (colorlessUnlockedUtxos[i].satoshis >= financeAmount) {
+          return cb(null, colorlessUnlockedUtxos[i]);
         }
       }
       return cb({ error: "Insufficient funds to finance transfer" });
@@ -462,6 +469,15 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     return _config().fee || defaultConfig.fee;
   };
 
+  root.updateLockedUtxos = function(cb) {
+    var fc = profileService.focusedClient;
+    fc.getUtxos(function(err, utxos) {
+      if (err) { return cb(err); }
+      _setLockedUtxos(utxos);
+      cb(null, root.lockedUtxos);
+    });
+  };
+
   root.getAssets = function(address, cb) {
     var network = profileService.focusedClient.credentials.network;
     getAssetsByAddress(address, network, function(err, assetsInfo) {
@@ -472,6 +488,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
+          var isLocked = lodash.includes(root.lockedUtxos, asset.utxo.txid + ":" + asset.utxo.index);
           var a = {
             assetId: asset.assetId,
             utxo: asset.utxo,
@@ -481,7 +498,8 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
             divisible: metadata.divisibility,
             icon: _extractAssetIcon(metadata),
             issuanceTxid: metadata.issuanceTxid,
-            metadata: metadata.metadataOfIssuence.data
+            metadata: metadata.metadataOfIssuence.data,
+            locked: isLocked
           };
           assets.push(a);
           if (assetsInfo.length == assets.length) {
@@ -631,6 +649,7 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "        <div class=\"small-2 columns\">\n" +
     "          <span class=\"size-16\">\n" +
     "            {{ asset.asset.amount }} unit{{ asset.asset.amount != 1 ? 's' : '' }}\n" +
+    "            <i class=\"fi-lock\" ng-show=\"asset.locked\"></i>\n" +
     "          </span>\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
@@ -662,6 +681,15 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "</nav>\n" +
     "\n" +
     "<div class=\"modal-content\">\n" +
+    "    <div ng-show=\"asset.locked\">\n" +
+    "        <h4 class=\"title m0\">\n" +
+    "            <div class=\"asset-alert\">\n" +
+    "                <i class=\"fi-info\"></i>\n" +
+    "                <span translate>Asset locked by pending transfer</span>\n" +
+    "            </div>\n" +
+    "        </h4>\n" +
+    "    </div>\n" +
+    "\n" +
     "    <div class=\"header-modal text-center\">\n" +
     "        <img ng-src=\"{{ asset.icon }}\" class=\"asset-image\" ng-show=\"asset.icon\"/>\n" +
     "        <div class=\"size-42\">\n" +
@@ -674,7 +702,7 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "\n" +
     "    <div>\n" +
     "        <div class=\"text-center m20t\">\n" +
-    "            <button class=\"button outline round light-gray tiny\" ng-click=\"openTransferModal(asset)\">\n" +
+    "            <button class=\"button outline round light-gray tiny\" ng-click=\"openTransferModal(asset)\" ng-disabled=\"asset.locked\">\n" +
     "                <span class=\"text-primary\" translate>Transfer</span>\n" +
     "            </button>\n" +
     "        </div>\n" +
@@ -811,8 +839,14 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "        <div class=\"size-42\">\n" +
     "            {{ asset.metadata.assetName }}\n" +
     "        </div>\n" +
-    "        <div class=\"size-18 m5t text-gray\" ng-show=\"btx.alternativeAmount\">\n" +
+    "        <div class=\"size-18 m5t text-gray\">\n" +
     "            {{ asset.metadata.description }}\n" +
+    "        </div>\n" +
+    "        <div class=\"size-14 m20t\">\n" +
+    "          <span class=\"db text-bold\">\n" +
+    "            <span translate>Available Units</span>:\n" +
+    "            {{ asset.asset.amount }}\n" +
+    "          </span>\n" +
     "        </div>\n" +
     "    </div>\n" +
     "\n" +

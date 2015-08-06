@@ -17,6 +17,7 @@
         <div class="small-2 columns">
           <span class="size-16">
             {{ asset.asset.amount }} unit{{ asset.asset.amount != 1 ? 's' : '' }}
+            <i class="fi-lock" ng-show="asset.locked"></i>
           </span>
         </div>
         <div class="small-4 columns">
