@@ -77,6 +77,10 @@ angular.module('copayAddon.coloredCoins')
 
       $scope.error = '';
 
+      var txStatusOpts = {
+        templateUrl: 'colored-coins/views/modals/asset-status.html'
+      };
+
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
       };
@@ -180,14 +184,14 @@ angular.module('copayAddon.coloredCoins')
               if (memo)
                 $log.info(memo);
 
-              txStatus.notify(btx, function() {
+              txStatus.notify(btx, txStatusOpts, function() {
                 $scope.$emit('Local/TxProposalAction', true);
                 return cb();
               });
             });
           } else {
             setOngoingProcess();
-            txStatus.notify(signedTx, function() {
+            txStatus.notify(signedTx, txStatusOpts, function() {
               $scope.$emit('Local/TxProposalAction');
               return cb();
             });
@@ -629,7 +633,7 @@ angular.module('copayAddon.coloredCoins')
       }
     });
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/send.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/send.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
@@ -815,6 +819,53 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "\n" +
     "    <div class=\"extra-margin-bottom\"></div>\n" +
     "</div>");
+}]);
+
+angular.module("colored-coins/views/modals/asset-status.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/modals/asset-status.html",
+    "<div ng-if=\"type == 'broadcasted'\" class=\"popup-txsent\">\n" +
+    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 text-white text-bold tu p20\">\n" +
+    "        <span translate>Asset Transferred</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline round white tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "\n" +
+    "\n" +
+    "<div ng-if=\"type == 'created'\" class=\"popup-txsigned\">\n" +
+    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 text-primary tu text-bold p20\">\n" +
+    "        <span translate>Asset Transfer Proposal Created</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "\n" +
+    "\n" +
+    "\n" +
+    "<div ng-if=\"type == 'accepted'\" class=\"popup-txsigned\">\n" +
+    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 text-primary tu text-bold p20\">\n" +
+    "        <span translate>Asset Transfer Accepted</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "\n" +
+    "<div ng-if=\"type=='rejected'\" class=\"popup-txrejected\">\n" +
+    "    <i class=\"fi-x small-centered columns m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 tu text-warning text-bold p20\">\n" +
+    "        <span translate>Asset Transfer Rejected</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline light-gray round tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "");
 }]);
 
 angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache", function($templateCache) {

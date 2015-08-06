@@ -49,6 +49,10 @@ angular.module('copayAddon.coloredCoins')
 
       $scope.error = '';
 
+      var txStatusOpts = {
+        templateUrl: 'colored-coins/views/modals/asset-status.html'
+      };
+
       $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
       };
@@ -152,14 +156,14 @@ angular.module('copayAddon.coloredCoins')
               if (memo)
                 $log.info(memo);
 
-              txStatus.notify(btx, function() {
+              txStatus.notify(btx, txStatusOpts, function() {
                 $scope.$emit('Local/TxProposalAction', true);
                 return cb();
               });
             });
           } else {
             setOngoingProcess();
-            txStatus.notify(signedTx, function() {
+            txStatus.notify(signedTx, txStatusOpts, function() {
               $scope.$emit('Local/TxProposalAction');
               return cb();
             });
