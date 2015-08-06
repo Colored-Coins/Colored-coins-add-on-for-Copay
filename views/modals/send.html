@@ -21,8 +21,14 @@
         <div class="size-42">
             {{ asset.metadata.assetName }}
         </div>
-        <div class="size-18 m5t text-gray" ng-show="btx.alternativeAmount">
+        <div class="size-18 m5t text-gray">
             {{ asset.metadata.description }}
+        </div>
+        <div class="size-14 m20t">
+          <span class="db text-bold">
+            <span translate>Available Units</span>:
+            {{ asset.asset.amount }}
+          </span>
         </div>
     </div>
 
