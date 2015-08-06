@@ -211,6 +211,9 @@ angular.module('copayAddon.coloredCoins')
               .dropRight()
               .value();
 
+          // for Copay to show recipient properly
+          outputs[0].toAddress = transfer._address;
+
           // exclude change output to calculate spending amount
           var amount = tx.outputAmount - tx.outputs[tx.outputs.length - 1].satoshis;
 
