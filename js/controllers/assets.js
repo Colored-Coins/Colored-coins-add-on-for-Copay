@@ -216,19 +216,14 @@ angular.module('copayAddon.coloredCoins')
           // for Copay to show recipient properly
           outputs[0].toAddress = transfer._address;
 
-          // exclude change output to calculate spending amount
-          var amount = tx.outputAmount - tx.outputs[tx.outputs.length - 1].satoshis;
-
           setOngoingProcess(gettext('Creating tx proposal'));
           feeService.getCurrentFeeValue(function(err, feePerKb) {
             if (err) $log.debug(err);
             fc.sendTxProposal({
               type: 'external',
-              toAddress: transfer._address,
               inputs: inputs,
               outputs: outputs,
               noOutputsShuffle: true,
-              amount: amount,
               message: '',
               payProUrl: null,
               feePerKb: feePerKb,
