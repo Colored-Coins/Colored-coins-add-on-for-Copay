@@ -2,7 +2,7 @@
 
 var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates']);
 
-module.run(function(addonManager) {
+module.run(function(addonManager, coloredCoins) {
   addonManager.registerAddon({
     menuItem: {
       'title': 'Assets',
@@ -23,6 +23,9 @@ module.run(function(addonManager) {
         txp.toAddress = txp.outputs[0].toAddress; // txproposal
         txp.address = txp.outputs[0].address;     // txhistory
       }
+    },
+    processCreateTxOpts: function(txOpts) {
+      txOpts.utxosToExclude = (txOpts.utxosToExclude || []).concat(coloredCoins.getColoredUtxos());
     }
   });
 });

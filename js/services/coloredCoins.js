@@ -13,6 +13,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
   // UTXOs "cache"
   root.txidToUTXO = {};
+  root.assets = {};
   root.lockedUtxos = [];
 
   var _config = function() {
@@ -106,7 +107,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
         return result;
       }, {});
 
-      var coloredUtxos = lodash.map(assets, function(a) { return a.asset.utxo.txid + ":" + a.asset.utxo.index; });
+      var coloredUtxos = root.getColoredUtxos();
 
       var colorlessUnlockedUtxos = lodash.reject(utxos, function(utxo) {
         return lodash.includes(coloredUtxos, utxo.txid + ":" + utxo.vout) || utxo.locked;
@@ -134,6 +135,10 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
 
   root.defaultFee = function() {
     return _config().fee || defaultConfig.fee;
+  };
+
+  root.getColoredUtxos = function() {
+    return lodash.keys(root.assets);
   };
 
   root.updateLockedUtxos = function(cb) {
@@ -168,6 +173,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
             metadata: metadata.metadataOfIssuence.data,
             locked: isLocked
           };
+          root.assets[asset.utxo.txid + ":" + asset.utxo.index] = a;
           assets.push(a);
           if (assetsInfo.length == assets.length) {
             return cb(assets);
