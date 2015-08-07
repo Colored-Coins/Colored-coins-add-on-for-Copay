@@ -30,7 +30,7 @@ module.run(function(addonManager) {
 
 angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
-                                              profileService, configService, lodash) {
+                                              profileService, configService, feeService, lodash) {
   var self = this;
 
   this.assets = [];
@@ -72,8 +72,6 @@ angular.module('copayAddon.coloredCoins')
     var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
                                            profileService, lodash, bitcore, txStatus) {
       $scope.asset = asset;
-
-      $scope.fee = coloredCoins.defaultFee();
 
       $scope.error = '';
 
@@ -250,45 +248,47 @@ angular.module('copayAddon.coloredCoins')
           var amount = tx.outputAmount - tx.outputs[tx.outputs.length - 1].satoshis;
 
           setOngoingProcess(gettext('Creating tx proposal'));
-          fc.sendTxProposal({
-            type: 'external',
-            toAddress: transfer._address,
-            inputs: inputs,
-            outputs: outputs,
-            noOutputsShuffle: true,
-            amount: amount,
-            message: '',
-            payProUrl: null,
-            feePerKb: config.feeValue || 10000,
-            metadata: {
-              asset: {
-                assetId: asset.asset.assetId,
-                assetName: asset.metadata.assetName,
-                icon: asset.icon,
-                utxo: lodash.pick(asset.utxo, ['txid', 'index']),
-                amount: transfer._amount
+          feeService.getCurrentFeeValue(function(err, feePerKb) {
+            if (err) $log.debug(err);
+            fc.sendTxProposal({
+              type: 'external',
+              toAddress: transfer._address,
+              inputs: inputs,
+              outputs: outputs,
+              noOutputsShuffle: true,
+              amount: amount,
+              message: '',
+              payProUrl: null,
+              feePerKb: feePerKb,
+              metadata: {
+                asset: {
+                  assetId: asset.asset.assetId,
+                  assetName: asset.metadata.assetName,
+                  icon: asset.icon,
+                  utxo: lodash.pick(asset.utxo, ['txid', 'index']),
+                  amount: transfer._amount
+                }
               }
-            }
-          }, function(err, txp) {
-            if (err) {
-              setOngoingProcess();
-              profileService.lockFC();
-              return setTransferError(err);
-            }
-            console.log(txp);
-
-            _signAndBroadcast(txp, function(err) {
-              setOngoingProcess();
-              profileService.lockFC();
-              $scope.resetForm();
+            }, function(err, txp) {
               if (err) {
-                self.error = err.message ? err.message : gettext('Asset transfer was created but could not be completed. Please try again from home screen');
-                $scope.$emit('Local/TxProposalAction');
-                $timeout(function() {
-                  $scope.$digest();
-                }, 1);
+                setOngoingProcess();
+                profileService.lockFC();
+                return setTransferError(err);
               }
-              $scope.cancel();
+
+              _signAndBroadcast(txp, function(err) {
+                setOngoingProcess();
+                profileService.lockFC();
+                $scope.resetForm();
+                if (err) {
+                  self.error = err.message ? err.message : gettext('Asset transfer was created but could not be completed. Please try again from home screen');
+                  $scope.$emit('Local/TxProposalAction');
+                  $timeout(function() {
+                    $scope.$digest();
+                  }, 1);
+                }
+                $scope.cancel();
+              });
             });
           });
         });
@@ -898,7 +898,7 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "        </div>\n" +
     "        <div class=\"size-14 m20t\">\n" +
     "          <span class=\"db text-bold\">\n" +
-    "            <span translate>Available Units</span>:\n" +
+    "            <span translate>Quantity</span>:\n" +
     "            {{ asset.asset.amount }}\n" +
     "          </span>\n" +
     "        </div>\n" +
@@ -961,17 +961,6 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "                                <a class=\"postfix\" translate>units</a>\n" +
     "                            </div>\n" +
     "                        </div>\n" +
-    "                        <div>\n" +
-    "                            <label for=\"fee\">\n" +
-    "                                <span translate>Fee</span>\n" +
-    "                            </label>\n" +
-    "\n" +
-    "                            <div class=\"input\">\n" +
-    "                                <input type=\"number\" id=\"fee\" ng-model=\"fee\" disabled>\n" +
-    "                                <a class=\"postfix\" translate>bits</a>\n" +
-    "                            </div>\n" +
-    "                        </div>\n" +
-    "\n" +
     "                    </div>\n" +
     "                </div>\n" +
     "                <div class=\"row\" ng-show=\"!home.onGoingProcess\">\n" +
