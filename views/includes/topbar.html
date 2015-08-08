@@ -1,0 +1,17 @@
+<nav ng-controller="topbarController as topbar" class="tab-bar">
+    <section class="left-small">
+        <a id="hamburger" class="p10" ng-show="!goBackToState && !closeToHome  && !index.noFocusedWallet"
+           ng-click="index.openMenu()"><i class="fi-list size-24"></i>
+        </a>
+    </section>
+
+    <section class="right-small">
+
+    </section>
+
+    <section class="middle tab-bar-section">
+        <h1 class="title ellipsis" ng-style="{'color': noColor ? '#4A90E2' : index.backgroundColor}">
+            {{(titleSection|translate) || (index.alias || index.walletName)}}
+        </h1>
+    </section>
+</nav>

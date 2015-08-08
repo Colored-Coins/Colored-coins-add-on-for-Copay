@@ -1,34 +1,45 @@
 
-
 var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates']);
 
-module.run(function(addonManager, coloredCoins) {
-  addonManager.registerAddon({
-    menuItem: {
-      'title': 'Assets',
-      'icon': 'icon-pricetag',
-      'link': 'assets'
-    },
-    view: {
-      id: 'assets',
-      'class': 'assets',
-      template: 'colored-coins/views/assets.html'
-    },
-    formatPendingTxp: function(txp) {
-      if (txp.metadata && txp.metadata.asset) {
-        var value = txp.amountStr;
-        var asset = txp.metadata.asset;
-        txp.amountStr = asset.amount + " unit" + (asset.amount > 1 ? "s" : "") + " of " + asset.assetName + " (" + value + ")";
-        txp.showSingle = true;
-        txp.toAddress = txp.outputs[0].toAddress; // txproposal
-        txp.address = txp.outputs[0].address;     // txhistory
-      }
-    },
-    processCreateTxOpts: function(txOpts) {
-      txOpts.utxosToExclude = (txOpts.utxosToExclude || []).concat(coloredCoins.getColoredUtxos());
-    }
-  });
-});
+module
+    .config(function ($stateProvider) {
+      $stateProvider
+          .state('assets', {
+            url: '/assets',
+            walletShouldBeComplete: true,
+            needProfile: true,
+            views: {
+              'main': {
+                templateUrl: 'colored-coins/views/assets.html'
+              }
+            }
+          });
+    })
+    .run(function (addonManager, coloredCoins, $state) {
+      addonManager.registerAddon({
+        menuItem: {
+          title: 'Assets',
+          icon: 'icon-pricetag',
+          link: 'assets',
+          open: function() {
+            $state.go('assets');
+          }
+        },
+        formatPendingTxp: function (txp) {
+          if (txp.metadata && txp.metadata.asset) {
+            var value = txp.amountStr;
+            var asset = txp.metadata.asset;
+            txp.amountStr = asset.amount + " unit" + (asset.amount > 1 ? "s" : "") + " of " + asset.assetName + " (" + value + ")";
+            txp.showSingle = true;
+            txp.toAddress = txp.outputs[0].toAddress; // txproposal
+            txp.address = txp.outputs[0].address;     // txhistory
+          }
+        },
+        processCreateTxOpts: function (txOpts) {
+          txOpts.utxosToExclude = (txOpts.utxosToExclude || []).concat(coloredCoins.getColoredUtxos());
+        }
+      });
+    });
 'use strict';
 
 angular.module('copayAddon.coloredCoins')
@@ -42,19 +53,12 @@ angular.module('copayAddon.coloredCoins')
     $rootScope.$emit('Addon/OngoingProcess', name);
   };
 
-  var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
-    self.assets = [];
-    var addresses = lodash.pluck(balance.byAddress, 'address');
-
-    self.setOngoingProcess(gettext('Getting assets'));
-    coloredCoins.fetchAssets(addresses, function (err, assets) {
-      self.assets = assets;
-      self.setOngoingProcess();
-    });
+  var disableAssetListener = $rootScope.$on('ColoredCoins/AssetsUpdated', function (event, assets) {
+    self.assets = assets;
   });
 
   $scope.$on('$destroy', function() {
-    disableBalanceListener();
+    disableAssetListener();
   });
 
   this.openTransferModal = function(asset) {
@@ -325,7 +329,7 @@ angular.module('copayAddon.coloredCoins')
   });
 'use strict';
 
-function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
+function ColoredCoins($rootScope, profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
     fee: 49000,
     api: {
@@ -341,6 +345,23 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
   // UTXOs "cache"
   root.txidToUTXO = {};
   root.assets = [];
+
+  var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
+    root.assets = [];
+    var addresses = lodash.pluck(balance.byAddress, 'address');
+
+    $rootScope.$emit('Addon/OngoingProcess', 'Getting assets');
+    root.fetchAssets(addresses, function (err, assets) {
+      root.assets = assets;
+      $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
+      $rootScope.$emit('Addon/OngoingProcess', null);
+    });
+  });
+
+  $rootScope.$on('$destroy', function() {
+    disableBalanceListener();
+  });
+
 
   var _config = function() {
     return configService.getSync()['coloredCoins'] || defaultConfig;
@@ -644,10 +665,12 @@ angular.module('copayAddon.coloredCoins')
       }
     });
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/send.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/send.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
+    "<div class=\"topbar-container\" ng-include=\"'colored-coins/views/includes/topbar.html'\"></div>\n" +
+    "\n" +
     "<div ng-show=\"assets.assets\" class=\"scroll\" ng-controller=\"assetsController as assets\">\n" +
     "    <div ng-repeat=\"asset in assets.assets | orderBy:['assetName', 'utxo.txid']\" ng-click=\"assets.openAssetModal(asset)\"\n" +
     "         class=\"row collapse assets-list\">\n" +
@@ -679,6 +702,29 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "    </div>\n" +
     "</div>\n" +
     "<div class=\"extra-margin-bottom\"></div>\n" +
+    "<div ng-include=\"'views/includes/menu.html'\" ng-show=\"!index.noFocusedWallet\"></div>\n" +
+    "");
+}]);
+
+angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/includes/topbar.html",
+    "<nav ng-controller=\"topbarController as topbar\" class=\"tab-bar\">\n" +
+    "    <section class=\"left-small\">\n" +
+    "        <a id=\"hamburger\" class=\"p10\" ng-show=\"!goBackToState && !closeToHome  && !index.noFocusedWallet\"\n" +
+    "           ng-click=\"index.openMenu()\"><i class=\"fi-list size-24\"></i>\n" +
+    "        </a>\n" +
+    "    </section>\n" +
+    "\n" +
+    "    <section class=\"right-small\">\n" +
+    "\n" +
+    "    </section>\n" +
+    "\n" +
+    "    <section class=\"middle tab-bar-section\">\n" +
+    "        <h1 class=\"title ellipsis\" ng-style=\"{'color': noColor ? '#4A90E2' : index.backgroundColor}\">\n" +
+    "            {{(titleSection|translate) || (index.alias || index.walletName)}}\n" +
+    "        </h1>\n" +
+    "    </section>\n" +
+    "</nav>\n" +
     "");
 }]);
 

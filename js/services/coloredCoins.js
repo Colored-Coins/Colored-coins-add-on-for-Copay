@@ -1,6 +1,6 @@
 'use strict';
 
-function ColoredCoins(profileService, configService, bitcore, $http, $log, lodash) {
+function ColoredCoins($rootScope, profileService, configService, bitcore, $http, $log, lodash) {
   var defaultConfig = {
     fee: 49000,
     api: {
@@ -16,6 +16,23 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
   // UTXOs "cache"
   root.txidToUTXO = {};
   root.assets = [];
+
+  var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
+    root.assets = [];
+    var addresses = lodash.pluck(balance.byAddress, 'address');
+
+    $rootScope.$emit('Addon/OngoingProcess', 'Getting assets');
+    root.fetchAssets(addresses, function (err, assets) {
+      root.assets = assets;
+      $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
+      $rootScope.$emit('Addon/OngoingProcess', null);
+    });
+  });
+
+  $rootScope.$on('$destroy', function() {
+    disableBalanceListener();
+  });
+
 
   var _config = function() {
     return configService.getSync()['coloredCoins'] || defaultConfig;

@@ -1,3 +1,5 @@
+<div class="topbar-container" ng-include="'colored-coins/views/includes/topbar.html'"></div>
+
 <div ng-show="assets.assets" class="scroll" ng-controller="assetsController as assets">
     <div ng-repeat="asset in assets.assets | orderBy:['assetName', 'utxo.txid']" ng-click="assets.openAssetModal(asset)"
          class="row collapse assets-list">
@@ -29,3 +31,4 @@
     </div>
 </div>
 <div class="extra-margin-bottom"></div>
+<div ng-include="'views/includes/menu.html'" ng-show="!index.noFocusedWallet"></div>
