@@ -2,14 +2,10 @@
 
 angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
-                                              profileService, configService, feeService, lodash) {
+                                              profileService, feeService, lodash) {
   var self = this;
 
-  this.assets = [];
-
-  var addressToPath = {};
-
-  var config = configService.getSync().wallet.settings;
+  this.assets = coloredCoins.assets;
 
   this.setOngoingProcess = function(name) {
     $rootScope.$emit('Addon/OngoingProcess', name);
@@ -17,21 +13,12 @@ angular.module('copayAddon.coloredCoins')
 
   var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
     self.assets = [];
-    addressToPath = lodash.reduce(balance.byAddress, function(result, n) { result[n.address] = n.path; return result; }, {});
-    if (balance.byAddress.length > 0) {
-      self.setOngoingProcess(gettext('Getting assets'));
-    }
+    var addresses = lodash.pluck(balance.byAddress, 'address');
 
-    var checkedAddresses = 0;
-    coloredCoins.updateLockedUtxos(function(lockedUtxos) {
-      balance.byAddress.forEach(function (ba) {
-        coloredCoins.getAssets(ba.address, function (assets) {
-          self.assets = self.assets.concat(assets);
-          if (++checkedAddresses == balance.byAddress.length) {
-            self.setOngoingProcess();
-          }
-        })
-      });
+    self.setOngoingProcess(gettext('Getting assets'));
+    coloredCoins.fetchAssets(addresses, function (err, assets) {
+      self.assets = assets;
+      self.setOngoingProcess();
     });
   });
 

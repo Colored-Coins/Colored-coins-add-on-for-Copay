@@ -9,12 +9,13 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     }
   };
 
-  var root = {};
+  var root = {},
+      lockedUtxos = [],
+      self = this;
 
   // UTXOs "cache"
   root.txidToUTXO = {};
-  root.assets = {};
-  root.lockedUtxos = [];
+  root.assets = [];
 
   var _config = function() {
     return configService.getSync()['coloredCoins'] || defaultConfig;
@@ -89,8 +90,17 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
     });
   };
 
+  var _updateLockedUtxos = function(cb) {
+    var fc = profileService.focusedClient;
+    fc.getUtxos(function(err, utxos) {
+      if (err) { return cb(err); }
+      _setLockedUtxos(utxos);
+      cb();
+    });
+  };
+
   var _setLockedUtxos = function(utxos) {
-    root.lockedUtxos = lodash.chain(utxos)
+    self.lockedUtxos = lodash.chain(utxos)
         .filter('locked')
         .map(function(utxo) { return utxo.txid + ":" + utxo.vout; })
         .value();
@@ -138,19 +148,30 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
   };
 
   root.getColoredUtxos = function() {
-    return lodash.keys(root.assets);
+    return lodash.map(root.assets, function(asset) { return asset.utxo.txid + ":" + asset.utxo.index; });
   };
 
-  root.updateLockedUtxos = function(cb) {
-    var fc = profileService.focusedClient;
-    fc.getUtxos(function(err, utxos) {
+  root.fetchAssets = function(addresses, cb) {
+    root.assets = [];
+    _updateLockedUtxos(function(err) {
       if (err) { return cb(err); }
-      _setLockedUtxos(utxos);
-      cb(null, root.lockedUtxos);
+
+      var checkedAddresses = 0;
+      lodash.each(addresses, function (address) {
+        _getAssetsForAddress(address, function (err, addressAssets) {
+          if (err) { return cb(err); }
+
+          root.assets = root.assets.concat(addressAssets);
+
+          if (++checkedAddresses == addresses.length) {
+            return cb(null, root.assets);
+          }
+        })
+      });
     });
   };
 
-  root.getAssets = function(address, cb) {
+  var _getAssetsForAddress = function(address, cb) {
     var network = profileService.focusedClient.credentials.network;
     getAssetsByAddress(address, network, function(err, assetsInfo) {
       if (err) { return cb(err); }
@@ -160,7 +181,7 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
-          var isLocked = lodash.includes(root.lockedUtxos, asset.utxo.txid + ":" + asset.utxo.index);
+          var isLocked = lodash.includes(self.lockedUtxos, asset.utxo.txid + ":" + asset.utxo.index);
           var a = {
             assetId: asset.assetId,
             utxo: asset.utxo,
@@ -173,15 +194,14 @@ function ColoredCoins(profileService, configService, bitcore, $http, $log, lodas
             metadata: metadata.metadataOfIssuence.data,
             locked: isLocked
           };
-          root.assets[asset.utxo.txid + ":" + asset.utxo.index] = a;
           assets.push(a);
           if (assetsInfo.length == assets.length) {
-            return cb(assets);
+            return cb(null, assets);
           }
         });
       });
       if (assetsInfo.length == assets.length) {
-        return cb(assets);
+        return cb(null, assets);
       }
     });
   };
