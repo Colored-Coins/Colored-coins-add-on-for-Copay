@@ -14,6 +14,89 @@ module
               }
             }
           });
+      $stateProvider.decorator('views', function (state, parent) {
+        var views = parent(state);
+
+        // replace both default 'splash' and 'disclaimer' states with a single one
+        if (state.name == 'splash' || state.name == 'disclaimer') {
+          views['main@'].templateUrl = 'colored-coins/views/landing.html';
+          views['main@'].controller = function($scope, $timeout, $log, profileService, storageService, go) {
+            storageService.getCopayDisclaimerFlag(function(err, val) {
+              if (val && profileService.profile) {
+                  go.walletHome();
+              }
+            });
+
+            $scope.agreeAndCreate = function(noWallet) {
+              storageService.setCopayDisclaimerFlag(function(err) {
+
+                if (profileService.profile) {
+                  $timeout(function() {
+                    applicationService.restart();
+                  }, 1000);
+                }
+
+                $scope.creatingProfile = true;
+
+                profileService.create({
+                  noWallet: noWallet
+                }, function(err) {
+                  if (err) {
+                    $scope.creatingProfile = false;
+                    $log.warn(err);
+                    $scope.error = err;
+                    $scope.$apply();
+                    $timeout(function() {
+                      $scope.create(noWallet);
+                    }, 3000);
+                  }
+                });
+              });
+
+            };
+          }
+
+        }
+
+        return views;
+      });
+/*      $stateProvider
+          .state('splash', {
+            url: '/splash',
+            needProfile: false,
+            views: {
+              'main': {
+                templateUrl: 'colored-coins/views/landing.html',
+                controller: function($scope, $timeout, $log, profileService, storageService, go) {
+                  storageService.getCopayDisclaimerFlag(function(err, val) {
+                    if (!val) go.path('disclaimer');
+
+                    if (profileService.profile) {
+                      go.walletHome();
+                    }
+                  });
+
+                  $scope.create = function(noWallet) {
+                    $scope.creatingProfile = true;
+
+                    profileService.create({
+                      noWallet: noWallet
+                    }, function(err) {
+                      if (err) {
+                        $scope.creatingProfile = false;
+                        $log.warn(err);
+                        $scope.error = err;
+                        $scope.$apply();
+                        $timeout(function() {
+                          $scope.create(noWallet);
+                        }, 3000);
+                      }
+                    });
+                  };
+                }
+              }
+            }
+          });             */
     })
     .run(function (addonManager, coloredCoins, $state) {
       addonManager.registerAddon({
@@ -665,7 +748,7 @@ angular.module('copayAddon.coloredCoins')
       }
     });
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/send.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/send.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
@@ -725,6 +808,49 @@ angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCa
     "        </h1>\n" +
     "    </section>\n" +
     "</nav>\n" +
+    "");
+}]);
+
+angular.module("colored-coins/views/landing.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/landing.html",
+    "<div class=\"text-center cc-landing\" ng-if=\"!index.hasProfile\">\n" +
+    "    <div class=\"row\">\n" +
+    "        <div class=\"medium-6 large-4 medium-centered small-centered large-centered columns m20t\">\n" +
+    "            <div class=\"cc-logo\"></div>\n" +
+    "            <div class=\"p20\">\n" +
+    "                <span class=\"text-bold size-16 text-white\" translate>WELCOME TO COLORED COPAY</span>\n" +
+    "                <p class=\"text-gray size-14 m0 text-light\" translate>A multisignature bitcoin wallet with colored coins support</p>\n" +
+    "            </div>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center size-12 text-warning\" ng-show=\"error && !creatingProfile\">\n" +
+    "        {{(error)|translate}}. <span translate>Retrying...</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"onGoingProcess\" ng-show=\"creatingProfile\">\n" +
+    "        <div class=\"onGoingProcess-content\" ng-style=\"{'background-color':'#222'}\">\n" +
+    "            <div class=\"spinner\">\n" +
+    "                <div class=\"rect1\"></div>\n" +
+    "                <div class=\"rect2\"></div>\n" +
+    "                <div class=\"rect3\"></div>\n" +
+    "                <div class=\"rect4\"></div>\n" +
+    "                <div class=\"rect5\"></div>\n" +
+    "            </div>\n" +
+    "            <span translate>Creating Profile...</span>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "    <div class=\"gif-splash\">\n" +
+    "        <span class=\"text-bold text-gray\" translate>Terms of Use</span>\n" +
+    "        <p class=\"enable_text_select text-light text-left size-14 text-black cc-disclaimer\" translate>\n" +
+    "            The software you are about to use functions as a free, open source, and multi-signature digital wallet. The software does not constitute an account where BitPay or other third parties serve as financial intermediaries or custodians of your bitcoin.  While the software has undergone beta testing and continues to be improved by feedback from the open-source user and developer community, we cannot guarantee that there will be no bugs in the software. You acknowledge that your use of this software is at your own discretion and in compliance with all applicable laws. You are responsible for safekeeping your passwords, private key pairs, PINs and any other codes you use to access the software. IF YOU LOSE ACCESS TO YOUR COPAY WALLET OR YOUR ENCRYPTED PRIVATE KEYS AND YOU HAVE NOT SEPARATELY STORED A BACKUP OF YOUR WALLET AND CORRESPONDING PASSWORD, YOU ACKNOWLEDGE AND AGREE THAT ANY BITCOIN YOU HAVE ASSOCIATED WITH THAT COPAY  WALLET WILL BECOME INACCESSIBLE. All transaction requests are irreversible.  The authors of the software, employees and affiliates of Bitpay, copyright holders, and BitPay, Inc. cannot retrieve your private keys or passwords if you lose or forget them and cannot guarantee transaction confirmation as they do not have control over the Bitcoin network. To the fullest extent permitted by law, this software is provided “as is” and no representations or warranties can be made of any kind, express or implied, including but not limited to the warranties of merchantability, fitness or a particular purpose and noninfringement. You assume any and all risks associated with the use of the software. In no event shall the authors of the software, employees and affiliates of Bitpay, copyright holders, or BitPay, Inc. be held liable for any claim, damages or other liability, whether in an action of contract, tort, or otherwise, arising from, out of or in connection with the software. We reserve the right to modify this disclaimer from time to time.\n" +
+    "        </p>\n" +
+    "        <div class=\"columns start-button m10t\" ng-show=\"!creatingProfile\">\n" +
+    "            <p class=\"text-light text-gray\" translate>I affirm that I have read, understood, and agree with these terms.</p>\n" +
+    "            <button ng-click=\"agreeAndCreate()\" class=\"button black expand round size-12 text-spacing\" translate> OPEN WALLET </button>\n" +
+    "            <p class=\"text-gray m5b size-12\" translate>Already have a wallet?</p>\n" +
+    "            <button  ng-click=\"agreeAndCreate(true)\" class=\"button round outline dark-gray tiny\" translate>Import backup </button>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "</div>\n" +
     "");
 }]);
 
