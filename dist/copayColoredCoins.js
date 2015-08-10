@@ -60,43 +60,6 @@ module
 
         return views;
       });
-/*      $stateProvider
-          .state('splash', {
-            url: '/splash',
-            needProfile: false,
-            views: {
-              'main': {
-                templateUrl: 'colored-coins/views/landing.html',
-                controller: function($scope, $timeout, $log, profileService, storageService, go) {
-                  storageService.getCopayDisclaimerFlag(function(err, val) {
-                    if (!val) go.path('disclaimer');
-
-                    if (profileService.profile) {
-                      go.walletHome();
-                    }
-                  });
-
-                  $scope.create = function(noWallet) {
-                    $scope.creatingProfile = true;
-
-                    profileService.create({
-                      noWallet: noWallet
-                    }, function(err) {
-                      if (err) {
-                        $scope.creatingProfile = false;
-                        $log.warn(err);
-                        $scope.error = err;
-                        $scope.$apply();
-                        $timeout(function() {
-                          $scope.create(noWallet);
-                        }, 3000);
-                      }
-                    });
-                  };
-                }
-              }
-            }
-          });             */
     })
     .run(function (addonManager, coloredCoins, $state) {
       addonManager.registerAddon({
