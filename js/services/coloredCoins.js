@@ -24,7 +24,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     $rootScope.$emit('Addon/OngoingProcess', 'Getting assets');
     root.fetchAssets(addresses, function (err, assets) {
       if (err) {
-        $log.error(err);
+        $log.error(err.error || err.message);
       } else {
         root.assets = assets;
         $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
@@ -205,6 +205,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
+          if (err) { return cb(err); }
           var isLocked = lodash.includes(self.lockedUtxos, asset.utxo.txid + ":" + asset.utxo.index);
           var a = {
             assetId: asset.assetId,
@@ -284,6 +285,36 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
       postTo('sendasset', transfer, network, cb);
     });
   };
+
+  root.createIssueTx = function(issuance, assets, cb) {
+    var fc = profileService.focusedClient;
+
+    var financeAmount = root.defaultFee() + 1300;
+
+    selectFinanceOutput(financeAmount, fc, assets, function(err, financeUtxo) {
+      if (err) { return cb(err); }
+
+      var metadata = lodash.pick(issuance, ['assetName', 'description', 'issuer']);
+
+      var issuanceOpts = {
+        issueAddress: financeUtxo.address,
+        fee: root.defaultFee(),
+        divisibility: 0,
+        amount: issuance.amount,
+        reissueable: false,
+        transfer: [{
+          'address': financeUtxo.address,
+          'amount': issuance.amount
+        }],
+        metadata: metadata
+      };
+
+      console.log(JSON.stringify(issuanceOpts, null, 2));
+      var network = fc.credentials.network;
+      postTo('issue', issuanceOpts, network, cb);
+    });
+  };
+
 
   return root;
 }
