@@ -27,34 +27,43 @@
                     <a class="close-notification text-warning">&#215;</a>
                 </div>
 
+                <div>
+                    <div class="row collapse">
+                        <label for="assetName" class="left">
+                            <span translate>Name</span>
+                        </label>
+                    </div>
+                    <div class="input">
+                        <input type="text" id="assetName" name="assetName" ng-disabled="home.blockUx"
+                               ng-attr-placeholder="{{'Asset Name' | translate}}" ng-model="assetName"
+                               required ng-focus="home.formFocus('assetName')" ng-blur="home.formFocus(false)">
+                    </div>
+                </div>
+                <div>
+                    <div class="row collapse">
+                        <label for="quantity" class="left">
+                            <span translate>Quantity</span>
+                        </label>
+                    </div>
+                    <div class="input">
+                        <input type="text" id="quantity" name="quantity" ng-disabled="home.blockUx"
+                               ng-attr-placeholder="{{'Quantity' | translate}}" ng-model="quantity"
+                               required ng-focus="home.formFocus('quantity')" ng-blur="home.formFocus(false)">
+                    </div>
+                </div>
+                <div>
+                    <div class="row collapse">
+                        <label for="description" class="left">
+                            <span translate>Description</span>
+                        </label>
+                    </div>
+                    <div class="input">
+                        <input type="text" id="description" name="description" ng-disabled="home.blockUx"
+                               ng-attr-placeholder="{{'Description' | translate}}" ng-model="description"
+                               ng-focus="home.formFocus('description')" ng-blur="home.formFocus(false)">
+                    </div>
+                </div>
                 <div class="row" ng-show="!home.onGoingProcess">
-                    <div>
-                        <div class="row collapse">
-                            <label for="assetName" class="left">
-                                <span translate>Asset Name</span>
-                            </label>
-                        </div>
-
-                        <div class="input">
-                            <input type="text" id="assetName" name="assetName" ng-disabled="home.blockUx"
-                                   ng-attr-placeholder="{{'Asset Name' | translate}}" ng-model="assetName"
-                                   required ng-focus="home.formFocus('assetName')" ng-blur="home.formFocus(false)">
-                        </div>
-                    </div>
-                    <div>
-                        <div class="row collapse">
-                            <label for="quantity" class="left">
-                                <span translate>Quantity</span>
-                            </label>
-                        </div>
-
-                        <div class="input">
-                            <input type="text" id="quantity" name="quantity" ng-disabled="home.blockUx"
-                                   ng-attr-placeholder="{{'Quantity' | translate}}" ng-model="quantity"
-                                   required ng-focus="home.formFocus('quantity')" ng-blur="home.formFocus(false)">
-                        </div>
-                    </div>
-
                     <div class="columns"
                          ng-class="{'small-6 medium-6 large-6':(home.lockAddress || home.lockAmount)}">
                         <button type="submit" class="button black round expand"
@@ -63,7 +72,6 @@
                             Issue
                         </button>
                     </div>
-
                 </div>
             </form>
         </div>
