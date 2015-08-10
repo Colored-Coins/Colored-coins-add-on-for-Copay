@@ -65,7 +65,7 @@ module
       addonManager.registerAddon({
         menuItem: {
           title: 'Assets',
-          icon: 'icon-pricetag',
+          icon: 'cc-menu-icon',
           link: 'assets',
           open: function() {
             $state.go('assets');
