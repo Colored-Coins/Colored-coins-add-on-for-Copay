@@ -23,8 +23,12 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
 
     $rootScope.$emit('Addon/OngoingProcess', 'Getting assets');
     root.fetchAssets(addresses, function (err, assets) {
-      root.assets = assets;
-      $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
+      if (err) {
+        $log.error(err);
+      } else {
+        root.assets = assets;
+        $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
+      }
       $rootScope.$emit('Addon/OngoingProcess', null);
     });
   });
@@ -170,6 +174,9 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
 
   root.fetchAssets = function(addresses, cb) {
     root.assets = [];
+    if (addresses.length == 0) {
+      return cb(null, root.assets);
+    }
     _updateLockedUtxos(function(err) {
       if (err) { return cb(err); }
 
