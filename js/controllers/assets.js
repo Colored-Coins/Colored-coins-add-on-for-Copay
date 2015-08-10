@@ -284,4 +284,75 @@ angular.module('copayAddon.coloredCoins')
       m.addClass('slideOutDown');
     });
   };
-  });
+
+      this.openIssueAssetModal = function(asset) {
+
+        var AssetIssueController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
+                                               profileService, lodash, bitcore, txStatus) {
+          $scope.error = '';
+
+          var txStatusOpts = {
+            templateUrl: 'colored-coins/views/modals/asset-status.html'
+          };
+
+          $scope.cancel = function() {
+            $modalInstance.dismiss('cancel');
+          };
+
+          $scope.resetError = function() {
+            this.error = this.success = null;
+          };
+
+          var setOngoingProcess = function(name) {
+            $rootScope.$emit('Addon/OngoingProcess', name);
+          };
+
+          var setIssueError = function(err) {
+            var fc = profileService.focusedClient;
+            $log.warn(err);
+            var errMessage =
+                fc.credentials.m > 1 ? gettext('Could not create asset issue proposal') : gettext('Could not issue asset');
+
+            //This are abnormal situations, but still err message will not be translated
+            //(the should) we should switch using err.code and use proper gettext messages
+            err.message = err.error ? err.error : err.message;
+            errMessage = errMessage + '. ' + (err.message ? err.message : gettext('Check you connection and try again'));
+
+            $scope.error = errMessage;
+
+            $timeout(function() {
+              $scope.$digest();
+            }, 1);
+          };
+
+          var handleIssueError = function(err) {
+            profileService.lockFC();
+            setOngoingProcess();
+            return setIssueError(err);
+          };
+
+          $scope.resetForm = function(form) {
+            $scope.resetError();
+
+            $timeout(function() {
+              $rootScope.$digest();
+            }, 1);
+          };
+
+          $scope.issueAsset = function(assetIssueForm) {
+
+          };
+        };
+
+        var modalInstance = $modal.open({
+          templateUrl: 'colored-coins/views/modals/issue.html',
+          windowClass: 'full animated slideInUp',
+          controller: AssetIssueController
+        });
+
+        modalInstance.result.finally(function() {
+          var m = angular.element(document.getElementsByClassName('reveal-modal'));
+          m.addClass('slideOutDown');
+        });
+      };
+});

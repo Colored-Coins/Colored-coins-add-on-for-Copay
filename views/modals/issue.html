@@ -1,0 +1,72 @@
+<nav class="tab-bar">
+    <section class="left-small">
+        <a ng-click="cancel()">
+            <i class="icon-arrow-left3 icon-back"></i>
+            <span class="text-back" translate>Back</span>
+        </a>
+    </section>
+    <section class="middle tab-bar-section">
+        <h1 class="title ellipsis" ng-style="{'color':color}" translate>
+            Issue new asset
+        </h1>
+    </section>
+
+    <section class="right-small">
+        <qr-scanner on-scan="onQrCodeScanned(data)" />
+    </section>
+</nav>
+
+<div class="modal-content">
+    <div class="row m20t">
+        <div class="large-12 large-centered columns">
+            <form name="assetIssueForm" ng-submit="issueAsset(assetIssueForm)" ng-disabled="home.blockUx || home.onGoingProcess" novalidate>
+                <div class="box-notification" ng-show="error" ng-click="resetError()">
+                  <span class="text-warning">
+                    {{ error|translate }}
+                  </span>
+                    <a class="close-notification text-warning">&#215;</a>
+                </div>
+
+                <div class="row" ng-show="!home.onGoingProcess">
+                    <div>
+                        <div class="row collapse">
+                            <label for="assetName" class="left">
+                                <span translate>Asset Name</span>
+                            </label>
+                        </div>
+
+                        <div class="input">
+                            <input type="text" id="assetName" name="assetName" ng-disabled="home.blockUx"
+                                   ng-attr-placeholder="{{'Asset Name' | translate}}" ng-model="assetName"
+                                   required ng-focus="home.formFocus('assetName')" ng-blur="home.formFocus(false)">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="row collapse">
+                            <label for="quantity" class="left">
+                                <span translate>Quantity</span>
+                            </label>
+                        </div>
+
+                        <div class="input">
+                            <input type="text" id="quantity" name="quantity" ng-disabled="home.blockUx"
+                                   ng-attr-placeholder="{{'Quantity' | translate}}" ng-model="quantity"
+                                   required ng-focus="home.formFocus('quantity')" ng-blur="home.formFocus(false)">
+                        </div>
+                    </div>
+
+                    <div class="columns"
+                         ng-class="{'small-6 medium-6 large-6':(home.lockAddress || home.lockAmount)}">
+                        <button type="submit" class="button black round expand"
+                                ng-disabled="assetIssueForm.$invalid || home.blockUx ||  index.isOffline"
+                                ng-style="{'background-color':index.backgroundColor}" translate>
+                            Issue
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="extra-margin-bottom"></div>
+</div> <!-- END Send -->

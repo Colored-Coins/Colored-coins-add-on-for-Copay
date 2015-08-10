@@ -1,4 +1,4 @@
-<nav ng-controller="topbarController as topbar" class="tab-bar">
+<nav class="tab-bar">
     <section class="left-small">
         <a id="hamburger" class="p10" ng-show="!goBackToState && !closeToHome  && !index.noFocusedWallet"
            ng-click="index.openMenu()"><i class="fi-list size-24"></i>
@@ -6,7 +6,9 @@
     </section>
 
     <section class="right-small">
-
+        <a class="p10" ng-click="assets.openIssueAssetModal()">
+            <i class="fi-plus size-24"></i>
+        </a>
     </section>
 
     <section class="middle tab-bar-section">
