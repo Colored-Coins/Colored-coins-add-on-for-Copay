@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('copayAddon.coloredCoins')
-    .controller('assetsController', function ($rootScope, $scope, $modal, coloredCoins) {
+    .controller('assetsController', function ($rootScope, $scope, $timeout, $modal, isCordova, coloredCoins) {
       var self = this;
 
       this.assets = coloredCoins.assets;
@@ -10,9 +10,33 @@ angular.module('copayAddon.coloredCoins')
         self.assets = assets;
       });
 
+      var disableOngoingProcessListener = $rootScope.$on('Addon/OngoingProcess', function(e, name) {
+        self.setOngoingProcess(name);
+      });
+
       $scope.$on('$destroy', function () {
         disableAssetListener();
+        disableOngoingProcessListener();
       });
+
+      this.setOngoingProcess = function(name) {
+        var self = this;
+        self.blockUx = !!name;
+
+        if (isCordova) {
+          if (name) {
+            window.plugins.spinnerDialog.hide();
+            window.plugins.spinnerDialog.show(null, name + '...', true);
+          } else {
+            window.plugins.spinnerDialog.hide();
+          }
+        } else {
+          self.onGoingProcess = name;
+          $timeout(function() {
+            $rootScope.$apply();
+          });
+        }
+      };
 
       var hideModal = function () {
         var m = angular.element(document.getElementsByClassName('reveal-modal'));

@@ -92,7 +92,7 @@ module
 'use strict';
 
 angular.module('copayAddon.coloredCoins')
-    .controller('assetsController', function ($rootScope, $scope, $modal, coloredCoins) {
+    .controller('assetsController', function ($rootScope, $scope, $timeout, $modal, isCordova, coloredCoins) {
       var self = this;
 
       this.assets = coloredCoins.assets;
@@ -101,9 +101,33 @@ angular.module('copayAddon.coloredCoins')
         self.assets = assets;
       });
 
+      var disableOngoingProcessListener = $rootScope.$on('Addon/OngoingProcess', function(e, name) {
+        self.setOngoingProcess(name);
+      });
+
       $scope.$on('$destroy', function () {
         disableAssetListener();
+        disableOngoingProcessListener();
       });
+
+      this.setOngoingProcess = function(name) {
+        var self = this;
+        self.blockUx = !!name;
+
+        if (isCordova) {
+          if (name) {
+            window.plugins.spinnerDialog.hide();
+            window.plugins.spinnerDialog.show(null, name + '...', true);
+          } else {
+            window.plugins.spinnerDialog.hide();
+          }
+        } else {
+          self.onGoingProcess = name;
+          $timeout(function() {
+            $rootScope.$apply();
+          });
+        }
+      };
 
       var hideModal = function () {
         var m = angular.element(document.getElementsByClassName('reveal-modal'));
@@ -823,6 +847,53 @@ angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'c
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
     "<div class=\"scroll\" ng-controller=\"assetsController as assets\">\n" +
+    "    <div class=\"onGoingProcess\" ng-show=\"index.isOffline\">\n" +
+    "        <div class=\"onGoingProcess-content\" ng-style=\"{'background-color':'#222'}\">\n" +
+    "            <div class=\"spinner\">\n" +
+    "                <div class=\"rect1\"></div>\n" +
+    "                <div class=\"rect2\"></div>\n" +
+    "                <div class=\"rect3\"></div>\n" +
+    "                <div class=\"rect4\"></div>\n" +
+    "                <div class=\"rect5\"></div>\n" +
+    "            </div>\n" +
+    "            <span translate>Reconnecting to Wallet Service...</span>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "\n" +
+    "    <div class=\"onGoingProcess\" ng-show=\"index.anyOnGoingProcess && !index.isOffline\">\n" +
+    "        <div class=\"onGoingProcess-content\" ng-style=\"{'background-color':index.backgroundColor}\">\n" +
+    "            <div class=\"spinner\">\n" +
+    "                <div class=\"rect1\"></div>\n" +
+    "                <div class=\"rect2\"></div>\n" +
+    "                <div class=\"rect3\"></div>\n" +
+    "                <div class=\"rect4\"></div>\n" +
+    "                <div class=\"rect5\"></div>\n" +
+    "            </div>\n" +
+    "      <span translate ng-show=\"\n" +
+    "        index.onGoingProcessName == 'openingWallet'\n" +
+    "        || index.onGoingProcessName == 'updatingStatus'\n" +
+    "        || index.onGoingProcessName == 'updatingBalance'\n" +
+    "        || index.onGoingProcessName == 'updatingPendingTxps'\n" +
+    "        \"> Updating Wallet... </span>\n" +
+    "            <span translate ng-show=\"index.onGoingProcessName == 'scanning'\">Scanning Wallet funds...</span>\n" +
+    "            <span translate ng-show=\"index.onGoingProcessName == 'recreating'\">Recreating Wallet...</span>\n" +
+    "            <span translate ng-show=\"index.onGoingProcessName == 'generatingCSV'\">Generating .csv file...</span>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "\n" +
+    "    <div class=\"onGoingProcess\" ng-show=\"assets.onGoingProcess && !index.anyOnGoingProces && !index.isOffline\">\n" +
+    "        <div class=\"onGoingProcess-content\" ng-style=\"{'background-color':index.backgroundColor}\">\n" +
+    "            <div class=\"spinner\">\n" +
+    "                <div class=\"rect1\"></div>\n" +
+    "                <div class=\"rect2\"></div>\n" +
+    "                <div class=\"rect3\"></div>\n" +
+    "                <div class=\"rect4\"></div>\n" +
+    "                <div class=\"rect5\"></div>\n" +
+    "            </div>\n" +
+    "            {{assets.onGoingProcess|translate}}...\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "\n" +
     "    <div class=\"topbar-container\" ng-include=\"'colored-coins/views/includes/topbar.html'\"></div>\n" +
     "    <div ng-repeat=\"asset in assets.assets | orderBy:['assetName', 'utxo.txid']\" ng-click=\"assets.openAssetModal(asset)\"\n" +
     "         class=\"row collapse assets-list\">\n" +
@@ -869,7 +940,7 @@ angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCa
     "\n" +
     "    <section class=\"right-small\">\n" +
     "        <a class=\"p10\" ng-click=\"assets.openIssueModal()\">\n" +
-    "            <i class=\"fi-plus size-24\"></i>\n" +
+    "            <i class=\"fi-page-add size-24\"></i>\n" +
     "        </a>\n" +
     "    </section>\n" +
     "\n" +
@@ -1242,6 +1313,7 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "                            <div class=\"input\">\n" +
     "                                <input type=\"number\" id=\"amount\" ng-disabled=\"home.blockUx || home.lockAmount\" name=\"amount\"\n" +
     "                                       ng-attr-placeholder=\"{{'Quantity'|translate}}\"\n" +
+    "                                       min=\"1\" ng-pattern=\"/^\\d*$/\"\n" +
     "                                       ng-model=\"issuance.amount\" required autocomplete=\"off\"\n" +
     "                                       ng-focus=\"home.formFocus('amount')\" ng-blur=\"home.formFocus(false)\">\n" +
     "                                <a class=\"postfix\" translate>units</a>\n" +
