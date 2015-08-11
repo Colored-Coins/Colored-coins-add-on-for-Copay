@@ -91,10 +91,10 @@ ProcessingTxController.prototype._signAndBroadcast = function (txp, cb) {
   });
 };
 
-ProcessingTxController.prototype._createAndExecuteProposal = function (apiResult, toAddress, metadata) {
+ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, toAddress, metadata) {
   var self = this;
   var fc = self.profileService.focusedClient;
-  var tx = new self.bitcore.Transaction(apiResult.txHex);
+  var tx = new self.bitcore.Transaction(txHex);
   self.$log.debug(JSON.stringify(tx.toObject(), null, 2));
 
   var inputs = self._.map(tx.inputs, function (input) {

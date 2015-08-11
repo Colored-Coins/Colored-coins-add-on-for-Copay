@@ -89,290 +89,351 @@ module
 'use strict';
 
 angular.module('copayAddon.coloredCoins')
-    .controller('assetsController', function ($rootScope, $scope, $modal, $controller, $timeout, $log, coloredCoins, gettext,
-                                              profileService, feeService, lodash) {
+    .controller('assetsController', function ($rootScope, $scope, $modal, coloredCoins) {
+      var self = this;
+
+      this.assets = coloredCoins.assets;
+
+      var disableAssetListener = $rootScope.$on('ColoredCoins/AssetsUpdated', function (event, assets) {
+        self.assets = assets;
+      });
+
+      $scope.$on('$destroy', function () {
+        disableAssetListener();
+      });
+
+      var hideModal = function () {
+        var m = angular.element(document.getElementsByClassName('reveal-modal'));
+        m.addClass('slideOutDown');
+      };
+
+      this.openTransferModal = function (asset) {
+        $scope.asset = asset;
+
+        var modalInstance = $modal.open({
+          templateUrl: 'colored-coins/views/modals/send.html',
+          scope: $scope,
+          windowClass: 'full animated slideInUp',
+          controller: AssetTransferController
+        });
+
+        modalInstance.result.finally(hideModal);
+      };
+
+      this.openAssetModal = function (asset) {
+        var ModalInstanceCtrl = function ($rootScope, $scope, $modalInstance, insight) {
+          $scope.asset = asset;
+          insight = insight.get();
+          insight.getTransaction(asset.issuanceTxid, function (err, tx) {
+            if (!err) {
+              $scope.issuanceTx = tx;
+            }
+          });
+          $scope.openTransferModal = self.openTransferModal;
+
+          $scope.openBlockExplorer = function (asset) {
+            $rootScope.openExternalLink(insight.url + '/tx/' + asset.issuanceTxid)
+          };
+
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+        };
+        var modalInstance = $modal.open({
+          templateUrl: 'colored-coins/views/modals/asset-details.html',
+          windowClass: 'full animated slideInUp',
+          controller: ModalInstanceCtrl
+        });
+
+        modalInstance.result.finally(hideModal);
+      };
+
+      this.openIssueModal = function () {
+
+        var modalInstance = $modal.open({
+          templateUrl: 'colored-coins/views/modals/issue.html',
+          windowClass: 'full animated slideInUp',
+          controller: AssetIssueController
+        });
+
+        modalInstance.result.finally(hideModal);
+      };
+    });
+'use strict';
+
+var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
+                                     profileService, feeService, lodash, bitcore, txStatus) {
+
+  ProcessingTxController.call(this, $rootScope, $scope, $timeout, $log, coloredCoins, gettext, profileService, feeService,
+      lodash, bitcore, txStatus, $modalInstance);
+
   var self = this;
 
-  this.assets = coloredCoins.assets;
+  $scope.issueAsset = function (form) {
+    var modalScope = this;
 
-  this.setOngoingProcess = function(name) {
-    $rootScope.$emit('Addon/OngoingProcess', name);
-  };
+    if (form.$invalid) {
+      this.error = gettext('Unable to send transaction proposal');
+      return;
+    }
 
-  var disableAssetListener = $rootScope.$on('ColoredCoins/AssetsUpdated', function (event, assets) {
-    self.assets = assets;
-  });
-
-  $scope.$on('$destroy', function() {
-    disableAssetListener();
-  });
-
-  this.openTransferModal = function(asset) {
-
-    var AssetTransferController = function($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                           profileService, lodash, bitcore, txStatus) {
-      $scope.asset = asset;
-
-      $scope.error = '';
-
-      var txStatusOpts = {
-        templateUrl: 'colored-coins/views/modals/asset-status.html'
-      };
-
-      $scope.cancel = function() {
-        $modalInstance.dismiss('cancel');
-      };
-
-      $scope.resetError = function() {
-        this.error = this.success = null;
-      };
-
-      var setOngoingProcess = function(name) {
-        $rootScope.$emit('Addon/OngoingProcess', name);
-      };
-
-      $scope.onQrCodeScanned = function(data) {
-        this.error = '';
-        var form = this.assetTransferForm;
-        if (data) {
-          form.address.$setViewValue(new bitcore.URI(data).address.toString());
-          form.address.$isValid = true;
-          form.address.$render();
-          $scope.lockAddress = true;
-        }
-
-        if (form.address.$invalid) {
-          $scope.resetForm(form);
-          this.error = gettext('Could not recognize a valid Bitcoin QR Code');
-        }
-      };
-
-      var setTransferError = function(err) {
-        var fc = profileService.focusedClient;
-        $log.warn(err);
-        var errMessage =
-            fc.credentials.m > 1 ? gettext('Could not create asset transfer proposal') : gettext('Could not transfer asset');
-
-        //This are abnormal situations, but still err message will not be translated
-        //(the should) we should switch using err.code and use proper gettext messages
-        err.message = err.error ? err.error : err.message;
-        errMessage = errMessage + '. ' + (err.message ? err.message : gettext('Check you connection and try again'));
-
-        $scope.error = errMessage;
-
-        $timeout(function() {
-          $scope.$digest();
-        }, 1);
-      };
-
-      var handleTransferError = function(err) {
-        profileService.lockFC();
-        setOngoingProcess();
-        return setTransferError(err);
-      };
-
-      $scope.resetForm = function(form) {
-        $scope.resetError();
-
-        $scope.lockAddress = false;
-        $scope.lockAmount = false;
-
-        $scope._amount = $scope._address = null;
-
-        if (form && form.amount) {
-          form.amount.$pristine = true;
-          form.amount.$setViewValue('');
-          form.amount.$render();
-
-          form.$setPristine();
-
-          if (form.address) {
-            form.address.$pristine = true;
-            form.address.$setViewValue('');
-            form.address.$render();
-          }
-        }
-        $timeout(function() {
-          $rootScope.$digest();
-        }, 1);
-      };
-
-      var _signAndBroadcast = function(txp, cb) {
-        var fc = profileService.focusedClient;
-        self.setOngoingProcess(gettext('Signing transaction'));
-        fc.signTxProposal(txp, function(err, signedTx) {
-          profileService.lockFC();
-          setOngoingProcess();
-          if (err) {
-            $log.debug('Sign error:', err);
-            err.message = gettext('Asset transfer was created but could not be signed. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
-            return cb(err);
-          }
-
-          console.log(signedTx);
-
-          if (signedTx.status == 'accepted') {
-            setOngoingProcess(gettext('Broadcasting transaction'));
-            fc.broadcastTxProposal(signedTx, function(err, btx, memo) {
-              setOngoingProcess();
-              if (err) {
-                err.message = gettext('Asset transfer was signed but could not be broadcasted. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
-                return cb(err);
-              }
-              if (memo)
-                $log.info(memo);
-
-              txStatus.notify(btx, txStatusOpts, function() {
-                $scope.$emit('Local/TxProposalAction', true);
-                return cb();
-              });
-            });
-          } else {
-            setOngoingProcess();
-            txStatus.notify(signedTx, txStatusOpts, function() {
-              $scope.$emit('Local/TxProposalAction');
-              return cb();
-            });
-          }
-        });
-      };
-
-      $scope.transferAsset = function(transfer, form) {
-        if (asset.locked) {
-          setTransferError({ message: "Cannot transfer locked asset" });
-          return;
-        }
-        $log.debug("Transfering " + transfer._amount + " units(s) of asset " + asset.asset.assetId + " to " + transfer._address);
-
-        var fc = profileService.focusedClient;
-
-        if (form.$invalid) {
-          this.error = gettext('Unable to send transaction proposal');
-          return;
-        }
-
-        if (fc.isPrivKeyEncrypted()) {
-          profileService.unlockFC(function(err) {
-            if (err) return setTransferError(err);
-            return $scope.transferAsset(transfer, form);
-          });
-          return;
-        }
-
-        setOngoingProcess(gettext('Creating transfer transaction'));
-        coloredCoins.createTransferTx(asset, transfer._amount, transfer._address, self.assets, function(err, result) {
-          if (err) { return handleTransferError(err); }
-
-          var tx = new bitcore.Transaction(result.txHex);
-          $log.debug(JSON.stringify(tx.toObject(), null, 2));
-
-
-          var inputs = lodash.map(tx.inputs, function(input) {
-            input = input.toObject();
-            input = coloredCoins.txidToUTXO[input.prevTxId + ":" + input.outputIndex];
-            input.outputIndex = input.vout;
-            return input;
-          });
-
-          // drop change output provided by CC API. We want change output to be added by BWS in according with wallet's
-          // fee settings
-          var outputs = lodash.chain(tx.outputs)
-              .map(function(o) { return { script: o.script.toString(), amount: o.satoshis }; })
-              .dropRight()
-              .value();
-
-          // for Copay to show recipient properly
-          outputs[0].toAddress = transfer._address;
-
-          setOngoingProcess(gettext('Creating tx proposal'));
-          feeService.getCurrentFeeValue(function(err, feePerKb) {
-            if (err) $log.debug(err);
-            fc.sendTxProposal({
-              type: 'external',
-              inputs: inputs,
-              outputs: outputs,
-              noOutputsShuffle: true,
-              message: '',
-              payProUrl: null,
-              feePerKb: feePerKb,
-              metadata: {
-                asset: {
-                  assetId: asset.asset.assetId,
-                  assetName: asset.metadata.assetName,
-                  icon: asset.icon,
-                  utxo: lodash.pick(asset.utxo, ['txid', 'index']),
-                  amount: transfer._amount
-                }
-              }
-            }, function(err, txp) {
-              if (err) {
-                setOngoingProcess();
-                profileService.lockFC();
-                return setTransferError(err);
-              }
-
-              _signAndBroadcast(txp, function(err) {
-                setOngoingProcess();
-                profileService.lockFC();
-                $scope.resetForm();
-                if (err) {
-                  self.error = err.message ? err.message : gettext('Asset transfer was created but could not be completed. Please try again from home screen');
-                  $scope.$emit('Local/TxProposalAction');
-                  $timeout(function() {
-                    $scope.$digest();
-                  }, 1);
-                }
-                $scope.cancel();
-              });
-            });
-          });
-        });
-      };
-    };
-
-    var modalInstance = $modal.open({
-      templateUrl: 'colored-coins/views/modals/send.html',
-      windowClass: 'full animated slideInUp',
-      controller: AssetTransferController
-    });
-
-    modalInstance.result.finally(function() {
-      var m = angular.element(document.getElementsByClassName('reveal-modal'));
-      m.addClass('slideOutDown');
-    });
-  };
-
-  this.openAssetModal = function (asset) {
-    var ModalInstanceCtrl = function($rootScope, $scope, $modalInstance, insight) {
-      $scope.asset = asset;
-      insight = insight.get();
-      insight.getTransaction(asset.issuanceTxid, function(err, tx) {
-        if (!err) {
-          $scope.issuanceTx = tx;
-        }
+    var fc = profileService.focusedClient;
+    if (fc.isPrivKeyEncrypted()) {
+      profileService.unlockFC(function (err) {
+        if (err) return self._setError(err);
+        return $scope.issueAsset(form);
       });
-      $scope.openTransferModal = self.openTransferModal;
+      return;
+    }
 
-      $scope.openBlockExplorer = function(asset) {
-        $rootScope.openExternalLink(insight.url + '/tx/' + asset.issuanceTxid)
+    self.setOngoingProcess(gettext('Creating issuance transaction'));
+    coloredCoins.createIssueTx(modalScope.issuance, function (err, result) {
+      if (err) {
+        self._handleError(err);
+      }
+
+      var metadata = {
+        asset: {
+          action: 'issue',
+          assetName: modalScope.issuance.assetName,
+          //icon: $scope.asset.icon,
+          amount: modalScope.issuance.amount
+        }
       };
-
-      $scope.cancel = function() {
-        $modalInstance.dismiss('cancel');
-      };
-    };
-    var modalInstance = $modal.open({
-      templateUrl: 'colored-coins/views/modals/asset-details.html',
-      windowClass: 'full animated slideInUp',
-      controller: ModalInstanceCtrl
-    });
-
-    modalInstance.result.finally(function() {
-      var m = angular.element(document.getElementsByClassName('reveal-modal'));
-      m.addClass('slideOutDown');
+      self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, metadata);
     });
   };
+};
+
+AssetIssueController.prototype = Object.create(ProcessingTxController.prototype);
+
+'use strict';
+
+function ProcessingTxController($rootScope, $scope, $timeout, $log, coloredCoins, gettext, profileService, feeService,
+                                lodash, bitcore, txStatus, $modalInstance) {
+  this.$rootScope = $rootScope;
+  this.profileService = profileService;
+  this.$log = $log;
+  this.gettext = gettext;
+  this.bitcore = bitcore;
+  this.coloredCoins = coloredCoins;
+  this.feeService = feeService;
+  this._ = lodash;
+  this.$scope = $scope;
+  this.$timeout = $timeout;
+  this.txStatus = txStatus;
+  this.$modalInstance = $modalInstance;
+
+  this.txStatusOpts = {
+    templateUrl: 'colored-coins/views/modals/asset-status.html'
+  };
+
+  var self = this;
+
+  $scope.error = '';
+
+  $scope.resetError = function () {
+    self.error = self.success = null;
+  };
+
+  $scope.cancel = function () {
+    self.$modalInstance.dismiss('cancel');
+  };
+}
+
+ProcessingTxController.prototype.setOngoingProcess = function (name) {
+  this.$rootScope.$emit('Addon/OngoingProcess', name);
+};
+
+ProcessingTxController.prototype._setError = function (err) {
+  var fc = this.profileService.focusedClient;
+  this.$log.warn(err);
+  var errMessage = fc.credentials.m > 1
+      ? this.gettext('Could not create transaction proposal')
+      : this.gettext('Could not perform transaction');
+
+  //This are abnormal situations, but still err message will not be translated
+  //(the should) we should switch using err.code and use proper gettext messages
+  err.message = err.error ? err.error : err.message;
+  errMessage = errMessage + '. ' + (err.message ? err.message : this.gettext('Check you connection and try again'));
+
+  this.$scope.error = errMessage;
+
+  this.$timeout(function () {
+    this.$scope.$digest();
+  }, 1);
+};
+
+ProcessingTxController.prototype._handleError = function(err) {
+  this.setOngoingProcess();
+  this.profileService.lockFC();
+  return this._setError(err);
+};
+
+ProcessingTxController.prototype._signAndBroadcast = function (txp, cb) {
+  var self = this,
+  		fc = self.profileService.focusedClient;
+  self.setOngoingProcess(self.gettext('Signing transaction'));
+  fc.signTxProposal(txp, function (err, signedTx) {
+    self.profileService.lockFC();
+    self.setOngoingProcess();
+    if (err) {
+      err.message = self.gettext('Transaction was created but could not be signed. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+      return cb(err);
+    }
+
+    if (signedTx.status == 'accepted') {
+      self.setOngoingProcess(self.gettext('Broadcasting transaction'));
+      fc.broadcastTxProposal(signedTx, function (err, btx, memo) {
+        self.setOngoingProcess();
+        if (err) {
+          err.message = self.gettext('Transaction was signed but could not be broadcasted. Please try again from home screen.') + (err.message ? ' ' + err.message : '');
+          return cb(err);
+        }
+
+        return cb(null, btx);
+      });
+    } else {
+      self.setOngoingProcess();
+      return cb(null, signedTx);
+    }
   });
+};
+
+ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, toAddress, metadata) {
+  var self = this;
+  var fc = self.profileService.focusedClient;
+  var tx = new self.bitcore.Transaction(txHex);
+  self.$log.debug(JSON.stringify(tx.toObject(), null, 2));
+
+  var inputs = self._.map(tx.inputs, function (input) {
+    input = input.toObject();
+    input = self.coloredCoins.txidToUTXO[input.prevTxId + ":" + input.outputIndex];
+    input.outputIndex = input.vout;
+    return input;
+  });
+
+  // drop change output provided by CC API. We want change output to be added by BWS in according with wallet's
+  // fee settings
+  var outputs = self._.chain(tx.outputs)
+      .map(function (o) {
+        return { script: o.script.toString(), amount: o.satoshis };
+      })
+      .dropRight()
+      .value();
+
+  // for Copay to show recipient properly
+  outputs[0].toAddress = toAddress;
+
+  self.setOngoingProcess(self.gettext('Creating tx proposal'));
+  self.feeService.getCurrentFeeValue(function (err, feePerKb) {
+    if (err) self.$log.debug(err);
+    fc.sendTxProposal({
+      type: 'external',
+      inputs: inputs,
+      outputs: outputs,
+      noOutputsShuffle: true,
+      message: '',
+      payProUrl: null,
+      feePerKb: feePerKb,
+      metadata: metadata
+    }, function (err, txp) {
+      if (err) {
+        return self._handleError(err);
+      }
+
+      self._signAndBroadcast(txp, function (err, tx) {
+        self.setOngoingProcess();
+        self.profileService.lockFC();
+        if (err) {
+          self.error = err.message ? err.message : self.gettext('Transaction proposal was created but could not be completed. Please try again from home screen');
+          self.$scope.$emit('Local/TxProposalAction');
+          self.$timeout(function() {
+            self.$scope.$digest();
+          }, 1);
+        } else {
+          self.txStatus.notify(tx, self.txStatusOpts, function () {
+            self.$scope.$emit('Local/TxProposalAction', true);
+          });
+        }
+        self.$scope.cancel();
+      });
+    });
+  });
+};
+
+'use strict';
+
+var AssetTransferController = function ($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
+                                        profileService, feeService, lodash, bitcore, txStatus) {
+
+  ProcessingTxController.call(this, $rootScope, $scope, $timeout, $log, coloredCoins, gettext, profileService, feeService,
+      lodash, bitcore, txStatus, $modalInstance);
+
+  var self = this;
+
+  $scope.onQrCodeScanned = function (data) {
+    this.error = '';
+    var form = this.assetTransferForm;
+    if (data) {
+      form.address.$setViewValue(new bitcore.URI(data).address.toString());
+      form.address.$isValid = true;
+      form.address.$render();
+      $scope.lockAddress = true;
+    }
+
+    if (form.address.$invalid) {
+      $scope.resetError();
+      $scope.lockAddress = false;
+      $scope._address = null;
+      this.error = gettext('Could not recognize a valid Bitcoin QR Code');
+    }
+  };
+
+  $scope.transferAsset = function (transfer, form) {
+    if ($scope.asset.locked) {
+      self._setError({ message: "Cannot transfer locked asset" });
+      return;
+    }
+    $log.debug("Transfering " + transfer._amount + " units(s) of asset " + $scope.asset.asset.assetId + " to " + transfer._address);
+
+    if (form.$invalid) {
+      this.error = gettext('Unable to send transaction proposal');
+      return;
+    }
+
+    var fc = profileService.focusedClient;
+    if (fc.isPrivKeyEncrypted()) {
+      profileService.unlockFC(function (err) {
+        if (err) return self._setError(err);
+        return $scope.transferAsset(transfer, form);
+      });
+      return;
+    }
+
+    self.setOngoingProcess(gettext('Creating transfer transaction'));
+    coloredCoins.createTransferTx($scope.asset, transfer._amount, transfer._address, function (err, result) {
+      if (err) {
+        self._handleError(err);
+      }
+
+      var metadata = {
+        asset: {
+          action: 'transfer',
+          assetId: $scope.asset.asset.assetId,
+          assetName: $scope.asset.metadata.assetName,
+          icon: $scope.asset.icon,
+          utxo: lodash.pick($scope.asset.utxo, ['txid', 'index']),
+          amount: transfer._amount
+        }
+      };
+      self._createAndExecuteProposal(result.txHex, transfer._address, metadata);
+    });
+  };
+};
+
+AssetTransferController.prototype = Object.create(ProcessingTxController.prototype);
+
 'use strict';
 
 function ColoredCoins($rootScope, profileService, configService, bitcore, $http, $log, lodash) {
@@ -399,7 +460,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     $rootScope.$emit('Addon/OngoingProcess', 'Getting assets');
     root.fetchAssets(addresses, function (err, assets) {
       if (err) {
-        $log.error(err);
+        $log.error(err.error || err.message);
       } else {
         root.assets = assets;
         $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
@@ -502,7 +563,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
         .value();
   };
 
-  var selectFinanceOutput = function(financeAmount, fc, assets, cb) {
+  var selectFinanceOutput = function(financeAmount, fc, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
 
@@ -580,6 +641,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
       var assets = [];
       assetsInfo.forEach(function(asset) {
         getMetadata(asset, network, function(err, metadata) {
+          if (err) { return cb(err); }
           var isLocked = lodash.includes(self.lockedUtxos, asset.utxo.txid + ":" + asset.utxo.index);
           var a = {
             assetId: asset.assetId,
@@ -610,7 +672,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     postTo('broadcast', { txHex: txHex }, network, cb);
   };
 
-  root.createTransferTx = function(asset, amount, toAddress, assets, cb) {
+  root.createTransferTx = function(asset, amount, toAddress, cb) {
     if (amount > asset.asset.amount) {
       return cb({ error: "Cannot transfer more assets then available" }, null);
     }
@@ -635,7 +697,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     // We need extra 600 satoshis if we have change transfer
     var financeAmount = root.defaultFee() + 600 * (to.length - 1);
 
-    selectFinanceOutput(financeAmount, fc, assets, function(err, financeUtxo) {
+    selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
       if (err) { return cb(err); }
 
       var transfer = {
@@ -659,6 +721,41 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
       postTo('sendasset', transfer, network, cb);
     });
   };
+
+  root.createIssueTx = function(issuance, cb) {
+    var fc = profileService.focusedClient;
+
+    var financeAmount = root.defaultFee() + 1300;
+
+    selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
+      if (err) { return cb(err); }
+
+      var metadata = lodash.pick(issuance, ['assetName', 'description', 'issuer']);
+
+      var issuanceOpts = {
+        issueAddress: financeUtxo.address,
+        fee: root.defaultFee(),
+        divisibility: 0,
+        amount: issuance.amount,
+        reissueable: false,
+        transfer: [{
+          'address': financeUtxo.address,
+          'amount': issuance.amount
+        }],
+        metadata: metadata
+      };
+
+      console.log(JSON.stringify(issuanceOpts, null, 2));
+      var network = fc.credentials.network;
+      postTo('issue', issuanceOpts, network, function (err, data) {
+        if (data) {
+          data.issuanceUtxo = financeUtxo;
+        }
+        return cb(err, data);
+      });
+    });
+  };
+
 
   return root;
 }
@@ -718,13 +815,12 @@ angular.module('copayAddon.coloredCoins')
       }
     });
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/send.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/issue.html', 'colored-coins/views/modals/send.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
-    "<div class=\"topbar-container\" ng-include=\"'colored-coins/views/includes/topbar.html'\"></div>\n" +
-    "\n" +
-    "<div ng-show=\"assets.assets\" class=\"scroll\" ng-controller=\"assetsController as assets\">\n" +
+    "<div class=\"scroll\" ng-controller=\"assetsController as assets\">\n" +
+    "    <div class=\"topbar-container\" ng-include=\"'colored-coins/views/includes/topbar.html'\"></div>\n" +
     "    <div ng-repeat=\"asset in assets.assets | orderBy:['assetName', 'utxo.txid']\" ng-click=\"assets.openAssetModal(asset)\"\n" +
     "         class=\"row collapse assets-list\">\n" +
     "        <div class=\"small-1 columns text-center\">\n" +
@@ -761,7 +857,7 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
 
 angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/includes/topbar.html",
-    "<nav ng-controller=\"topbarController as topbar\" class=\"tab-bar\">\n" +
+    "<nav class=\"tab-bar\">\n" +
     "    <section class=\"left-small\">\n" +
     "        <a id=\"hamburger\" class=\"p10\" ng-show=\"!goBackToState && !closeToHome  && !index.noFocusedWallet\"\n" +
     "           ng-click=\"index.openMenu()\"><i class=\"fi-list size-24\"></i>\n" +
@@ -769,7 +865,9 @@ angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCa
     "    </section>\n" +
     "\n" +
     "    <section class=\"right-small\">\n" +
-    "\n" +
+    "        <a class=\"p10\" ng-click=\"assets.openIssueModal()\">\n" +
+    "            <i class=\"fi-plus size-24\"></i>\n" +
+    "        </a>\n" +
     "    </section>\n" +
     "\n" +
     "    <section class=\"middle tab-bar-section\">\n" +
@@ -1019,6 +1117,103 @@ angular.module("colored-coins/views/modals/asset-status.html", []).run(["$templa
     "    </div>\n" +
     "</div>\n" +
     "");
+}]);
+
+angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/modals/issue.html",
+    "<nav class=\"tab-bar\">\n" +
+    "    <section class=\"left-small\">\n" +
+    "        <a ng-click=\"cancel()\">\n" +
+    "            <i class=\"icon-arrow-left3 icon-back\"></i>\n" +
+    "            <span class=\"text-back\" translate>Back</span>\n" +
+    "        </a>\n" +
+    "    </section>\n" +
+    "    <section class=\"middle tab-bar-section\">\n" +
+    "        <h1 class=\"title ellipsis\" ng-style=\"{'color':color}\" translate>\n" +
+    "            Issue new asset\n" +
+    "        </h1>\n" +
+    "    </section>\n" +
+    "\n" +
+    "    <section class=\"right-small\">\n" +
+    "        <qr-scanner on-scan=\"onQrCodeScanned(data)\" />\n" +
+    "    </section>\n" +
+    "</nav>\n" +
+    "\n" +
+    "<div class=\"modal-content\">\n" +
+    "    <div class=\"row m20t\">\n" +
+    "        <div class=\"large-12 large-centered columns\">\n" +
+    "            <form name=\"assetIssueForm\" ng-submit=\"issueAsset(assetIssueForm)\" ng-disabled=\"home.blockUx || home.onGoingProcess\" novalidate>\n" +
+    "                <div class=\"box-notification\" ng-show=\"error\" ng-click=\"resetError()\">\n" +
+    "                  <span class=\"text-warning\">\n" +
+    "                    {{ error|translate }}\n" +
+    "                  </span>\n" +
+    "                    <a class=\"close-notification text-warning\">&#215;</a>\n" +
+    "                </div>\n" +
+    "\n" +
+    "                <div>\n" +
+    "                    <div class=\"row collapse\">\n" +
+    "                        <label for=\"assetName\" class=\"left\">\n" +
+    "                            <span translate>Name</span>\n" +
+    "                        </label>\n" +
+    "                    </div>\n" +
+    "                    <div class=\"input\">\n" +
+    "                        <input type=\"text\" id=\"assetName\" name=\"assetName\" ng-disabled=\"home.blockUx\"\n" +
+    "                               ng-attr-placeholder=\"{{'Asset Name' | translate}}\" ng-model=\"issuance.assetName\"\n" +
+    "                               required ng-focus=\"home.formFocus('assetName')\" ng-blur=\"home.formFocus(false)\">\n" +
+    "                    </div>\n" +
+    "                </div>\n" +
+    "                <div>\n" +
+    "                    <div class=\"row collapse\">\n" +
+    "                        <label for=\"issuer\" class=\"left\">\n" +
+    "                            <span translate>Issuer</span>\n" +
+    "                        </label>\n" +
+    "                    </div>\n" +
+    "                    <div class=\"input\">\n" +
+    "                        <input type=\"text\" id=\"issuer\" name=\"issuer\" ng-disabled=\"home.blockUx\"\n" +
+    "                               ng-attr-placeholder=\"{{'Issuer' | translate}}\" ng-model=\"issuance.issuer\"\n" +
+    "                               required ng-focus=\"home.formFocus('issuer')\" ng-blur=\"home.formFocus(false)\">\n" +
+    "                    </div>\n" +
+    "                </div>\n" +
+    "\n" +
+    "                <div>\n" +
+    "                    <div class=\"row collapse\">\n" +
+    "                        <label for=\"amount\" class=\"left\">\n" +
+    "                            <span translate>Quantity</span>\n" +
+    "                        </label>\n" +
+    "                    </div>\n" +
+    "                    <div class=\"input\">\n" +
+    "                        <input type=\"text\" id=\"amount\" name=\"amount\" ng-disabled=\"home.blockUx\"\n" +
+    "                               ng-attr-placeholder=\"{{'Quantity' | translate}}\" ng-model=\"issuance.amount\"\n" +
+    "                               required ng-focus=\"home.formFocus('amount')\" ng-blur=\"home.formFocus(false)\">\n" +
+    "                    </div>\n" +
+    "                </div>\n" +
+    "                <div>\n" +
+    "                    <div class=\"row collapse\">\n" +
+    "                        <label for=\"description\" class=\"left\">\n" +
+    "                            <span translate>Description</span>\n" +
+    "                        </label>\n" +
+    "                    </div>\n" +
+    "                    <div class=\"input\">\n" +
+    "                        <input type=\"text\" id=\"description\" name=\"description\" ng-disabled=\"home.blockUx\"\n" +
+    "                               ng-attr-placeholder=\"{{'Description' | translate}}\" ng-model=\"issuance.description\"\n" +
+    "                               ng-focus=\"home.formFocus('description')\" ng-blur=\"home.formFocus(false)\">\n" +
+    "                    </div>\n" +
+    "                </div>\n" +
+    "                <div class=\"row\" ng-show=\"!home.onGoingProcess\">\n" +
+    "                    <div class=\"columns\"\n" +
+    "                         ng-class=\"{'small-6 medium-6 large-6':(home.lockAddress || home.lockAmount)}\">\n" +
+    "                        <button type=\"submit\" class=\"button black round expand\"\n" +
+    "                                ng-disabled=\"assetIssueForm.$invalid || home.blockUx ||  index.isOffline\"\n" +
+    "                                ng-style=\"{'background-color':index.backgroundColor}\" translate>\n" +
+    "                            Issue\n" +
+    "                        </button>\n" +
+    "                    </div>\n" +
+    "                </div>\n" +
+    "            </form>\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "    <div class=\"extra-margin-bottom\"></div>\n" +
+    "</div> <!-- END Send -->");
 }]);
 
 angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache", function($templateCache) {

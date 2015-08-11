@@ -35,20 +35,33 @@
                     </div>
                     <div class="input">
                         <input type="text" id="assetName" name="assetName" ng-disabled="home.blockUx"
-                               ng-attr-placeholder="{{'Asset Name' | translate}}" ng-model="assetName"
+                               ng-attr-placeholder="{{'Asset Name' | translate}}" ng-model="issuance.assetName"
                                required ng-focus="home.formFocus('assetName')" ng-blur="home.formFocus(false)">
                     </div>
                 </div>
                 <div>
                     <div class="row collapse">
-                        <label for="quantity" class="left">
+                        <label for="issuer" class="left">
+                            <span translate>Issuer</span>
+                        </label>
+                    </div>
+                    <div class="input">
+                        <input type="text" id="issuer" name="issuer" ng-disabled="home.blockUx"
+                               ng-attr-placeholder="{{'Issuer' | translate}}" ng-model="issuance.issuer"
+                               required ng-focus="home.formFocus('issuer')" ng-blur="home.formFocus(false)">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="row collapse">
+                        <label for="amount" class="left">
                             <span translate>Quantity</span>
                         </label>
                     </div>
                     <div class="input">
-                        <input type="text" id="quantity" name="quantity" ng-disabled="home.blockUx"
-                               ng-attr-placeholder="{{'Quantity' | translate}}" ng-model="quantity"
-                               required ng-focus="home.formFocus('quantity')" ng-blur="home.formFocus(false)">
+                        <input type="text" id="amount" name="amount" ng-disabled="home.blockUx"
+                               ng-attr-placeholder="{{'Quantity' | translate}}" ng-model="issuance.amount"
+                               required ng-focus="home.formFocus('amount')" ng-blur="home.formFocus(false)">
                     </div>
                 </div>
                 <div>
@@ -59,7 +72,7 @@
                     </div>
                     <div class="input">
                         <input type="text" id="description" name="description" ng-disabled="home.blockUx"
-                               ng-attr-placeholder="{{'Description' | translate}}" ng-model="description"
+                               ng-attr-placeholder="{{'Description' | translate}}" ng-model="issuance.description"
                                ng-focus="home.formFocus('description')" ng-blur="home.formFocus(false)">
                     </div>
                 </div>

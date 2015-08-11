@@ -127,7 +127,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
         .value();
   };
 
-  var selectFinanceOutput = function(financeAmount, fc, assets, cb) {
+  var selectFinanceOutput = function(financeAmount, fc, cb) {
     fc.getUtxos(function(err, utxos) {
       if (err) { return cb(err); }
 
@@ -236,7 +236,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     postTo('broadcast', { txHex: txHex }, network, cb);
   };
 
-  root.createTransferTx = function(asset, amount, toAddress, assets, cb) {
+  root.createTransferTx = function(asset, amount, toAddress, cb) {
     if (amount > asset.asset.amount) {
       return cb({ error: "Cannot transfer more assets then available" }, null);
     }
@@ -261,7 +261,7 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     // We need extra 600 satoshis if we have change transfer
     var financeAmount = root.defaultFee() + 600 * (to.length - 1);
 
-    selectFinanceOutput(financeAmount, fc, assets, function(err, financeUtxo) {
+    selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
       if (err) { return cb(err); }
 
       var transfer = {
@@ -286,12 +286,12 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     });
   };
 
-  root.createIssueTx = function(issuance, assets, cb) {
+  root.createIssueTx = function(issuance, cb) {
     var fc = profileService.focusedClient;
 
     var financeAmount = root.defaultFee() + 1300;
 
-    selectFinanceOutput(financeAmount, fc, assets, function(err, financeUtxo) {
+    selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
       if (err) { return cb(err); }
 
       var metadata = lodash.pick(issuance, ['assetName', 'description', 'issuer']);
@@ -311,7 +311,12 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
 
       console.log(JSON.stringify(issuanceOpts, null, 2));
       var network = fc.credentials.network;
-      postTo('issue', issuanceOpts, network, cb);
+      postTo('issue', issuanceOpts, network, function (err, data) {
+        if (data) {
+          data.issuanceUtxo = financeUtxo;
+        }
+        return cb(err, data);
+      });
     });
   };
 

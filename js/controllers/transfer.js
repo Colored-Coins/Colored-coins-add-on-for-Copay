@@ -48,13 +48,14 @@ var AssetTransferController = function ($rootScope, $scope, $modalInstance, $tim
     }
 
     self.setOngoingProcess(gettext('Creating transfer transaction'));
-    coloredCoins.createTransferTx($scope.asset, transfer._amount, transfer._address, self.assets, function (err, result) {
+    coloredCoins.createTransferTx($scope.asset, transfer._amount, transfer._address, function (err, result) {
       if (err) {
         self._handleError(err);
       }
 
       var metadata = {
         asset: {
+          action: 'transfer',
           assetId: $scope.asset.asset.assetId,
           assetName: $scope.asset.metadata.assetName,
           icon: $scope.asset.icon,
@@ -62,7 +63,7 @@ var AssetTransferController = function ($rootScope, $scope, $modalInstance, $tim
           amount: transfer._amount
         }
       };
-      self._createAndExecuteProposal(result, transfer._address, metadata);
+      self._createAndExecuteProposal(result.txHex, transfer._address, metadata);
     });
   };
 };
