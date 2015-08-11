@@ -71,7 +71,7 @@ module
             $state.go('assets');
           }
         },
-        formatPendingTxp: function (txp) {
+        formatPendingTxp: function(txp) {
           if (txp.metadata && txp.metadata.asset) {
             var value = txp.amountStr;
             var asset = txp.metadata.asset;
@@ -81,8 +81,11 @@ module
             txp.address = txp.outputs[0].address;     // txhistory
           }
         },
-        processCreateTxOpts: function (txOpts) {
+        processCreateTxOpts: function(txOpts) {
           txOpts.utxosToExclude = (txOpts.utxosToExclude || []).concat(coloredCoins.getColoredUtxos());
+        },
+        txTemplateUrl: function() {
+          return 'colored-coins/views/includes/transaction.html';
         }
       });
     });
@@ -815,7 +818,7 @@ angular.module('copayAddon.coloredCoins')
       }
     });
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/issue.html', 'colored-coins/views/modals/send.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/includes/transaction.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/issue.html', 'colored-coins/views/modals/send.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
@@ -876,6 +879,52 @@ angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCa
     "        </h1>\n" +
     "    </section>\n" +
     "</nav>\n" +
+    "");
+}]);
+
+angular.module("colored-coins/views/includes/transaction.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/includes/transaction.html",
+    "<div class=\"ng-animate-disabled row collapse last-transactions-content line-b\"\n" +
+    "     ng-class=\"{'text-gray':!tx.pendingForUs}\"\n" +
+    "     ng-click=\"home.openTxpModal(tx, index.copayers)\"\n" +
+    "     ng-init=\"isIssuance = tx.metadata.asset.action == 'issue'\">\n" +
+    "    <div class=\"small-1 columns text-center\" >\n" +
+    "        <i class=\"icon-circle-active size-10\" ng-show=\"tx.pendingForUs\" ng-style=\"{'color':index.backgroundColor}\" style=\"margin-top:8px;\"></i>\n" +
+    "        &nbsp;\n" +
+    "    </div>\n" +
+    "    <div class=\"small-10 columns\">\n" +
+    "        <div ng-if=\"!$root.updatingBalance\">\n" +
+    "            <span class=\"text-bold size-16\">\n" +
+    "                <span ng-show=\"isIssuance\" translate>Issue</span>\n" +
+    "                <span ng-hide=\"isIssuance\" translate>Send</span>\n" +
+    "                {{tx.amountStr}}\n" +
+    "            </span>\n" +
+    "            <time class=\"right size-12 text-gray m5t\">{{ (tx.ts || tx.createdOn ) * 1000 | amTimeAgo}}</time>\n" +
+    "        </div>\n" +
+    "        <div class=\"ellipsis size-14\">\n" +
+    "        <span ng-if=\"!tx.showSingle && !isIssuance\">\n" +
+    "          <span translate>Recipients</span>:\n" +
+    "          <span>{{tx.outputs.length}}</span>\n" +
+    "        </span>\n" +
+    "        <span ng-if=\"tx.showSingle && !isIssuance\">\n" +
+    "          <span translate>To</span>:\n" +
+    "          <span ng-if=\"tx.merchant\">\n" +
+    "            <span ng-show=\"tx.merchant.pr.ca\"><i class=\"fi-lock\"></i> {{tx.merchant.domain}}</span>\n" +
+    "            <span ng-show=\"!tx.merchant.pr.ca\"><i class=\"fi-unlock\"></i> {{tx.merchant.domain}}</span>\n" +
+    "          </span>\n" +
+    "          <contact address=\"{{tx.toAddress}}\" ng-hide=\"tx.merchant\"> </contact>\n" +
+    "          {{tx.toAddress}}\n" +
+    "        </span>\n" +
+    "        </div>\n" +
+    "        <div class=\"ellipsis text-gray size-14\">\n" +
+    "            {{tx.message}}\n" +
+    "        </div>\n" +
+    "    </div>\n" +
+    "    <div class=\"small-1 columns text-right\">\n" +
+    "        <br>\n" +
+    "        <i class=\"icon-arrow-right3 size-18\"></i>\n" +
+    "    </div>\n" +
+    "</div>\n" +
     "");
 }]);
 

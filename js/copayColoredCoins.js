@@ -71,7 +71,7 @@ module
             $state.go('assets');
           }
         },
-        formatPendingTxp: function (txp) {
+        formatPendingTxp: function(txp) {
           if (txp.metadata && txp.metadata.asset) {
             var value = txp.amountStr;
             var asset = txp.metadata.asset;
@@ -81,8 +81,11 @@ module
             txp.address = txp.outputs[0].address;     // txhistory
           }
         },
-        processCreateTxOpts: function (txOpts) {
+        processCreateTxOpts: function(txOpts) {
           txOpts.utxosToExclude = (txOpts.utxosToExclude || []).concat(coloredCoins.getColoredUtxos());
+        },
+        txTemplateUrl: function() {
+          return 'colored-coins/views/includes/transaction.html';
         }
       });
     });
