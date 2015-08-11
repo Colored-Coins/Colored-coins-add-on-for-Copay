@@ -128,7 +128,8 @@
             <li class="line-b p10 oh">
                 <span class="text-gray property-name" translate>Issuance Date</span>:
                 <span class="right">
-                    {{ issuanceTx.time * 1000 | date:'dd MMM yyyy hh:mm'}}
+                    <span ng-show="issuanceTx.time">{{ issuanceTx.time * 1000 | date:'dd MMM yyyy hh:mm'}}</span>
+                    <span class="text-warning" ng-show="!issuanceTx.time">Unconfirmed</span>
                 </span>
             </li>
         </ul>

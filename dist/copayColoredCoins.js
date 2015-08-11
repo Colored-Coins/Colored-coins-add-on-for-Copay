@@ -1174,7 +1174,8 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "            <li class=\"line-b p10 oh\">\n" +
     "                <span class=\"text-gray property-name\" translate>Issuance Date</span>:\n" +
     "                <span class=\"right\">\n" +
-    "                    {{ issuanceTx.time * 1000 | date:'dd MMM yyyy hh:mm'}}\n" +
+    "                    <span ng-show=\"issuanceTx.time\">{{ issuanceTx.time * 1000 | date:'dd MMM yyyy hh:mm'}}</span>\n" +
+    "                    <span class=\"text-warning\" ng-show=\"!issuanceTx.time\">Unconfirmed</span>\n" +
     "                </span>\n" +
     "            </li>\n" +
     "        </ul>\n" +
