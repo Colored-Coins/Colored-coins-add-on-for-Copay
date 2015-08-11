@@ -51,17 +51,31 @@
                                required ng-focus="home.formFocus('issuer')" ng-blur="home.formFocus(false)">
                     </div>
                 </div>
+                <div class="row">
+                    <div class="large-12 medium-12 columns">
+                        <div class="right" ng-hide="assetIssueForm.amount.$pristine && !assetIssueForm.amount.$modelValue ">
+                            <span class="has-error right size-12" ng-show="assetIssueForm.amount.$invalid">
+                                <i class="icon-close-circle size-14"></i>
+                                <span clas="vm" translate>Not valid</span>
+                            </span>
+                            <small class="text-primary right" ng-show="!assetIssueForm.amount.$invalid">
+                                <i class="icon-checkmark-circle size-14"></i>
+                            </small>
+                        </div>
+                        <div>
+                            <label for="amount">
+                                <span translate>Quantity</span>
+                            </label>
 
-                <div>
-                    <div class="row collapse">
-                        <label for="amount" class="left">
-                            <span translate>Quantity</span>
-                        </label>
-                    </div>
-                    <div class="input">
-                        <input type="text" id="amount" name="amount" ng-disabled="home.blockUx"
-                               ng-attr-placeholder="{{'Quantity' | translate}}" ng-model="issuance.amount"
-                               required ng-focus="home.formFocus('amount')" ng-blur="home.formFocus(false)">
+                            <div class="input">
+                                <input type="number" id="amount" ng-disabled="home.blockUx || home.lockAmount" name="amount"
+                                       ng-attr-placeholder="{{'Quantity'|translate}}"
+                                       min="1" ng-pattern="/^\d*$/"
+                                       ng-model="issuance.amount" required autocomplete="off"
+                                       ng-focus="home.formFocus('amount')" ng-blur="home.formFocus(false)">
+                                <a class="postfix" translate>units</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div>

@@ -1223,17 +1223,30 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "                               required ng-focus=\"home.formFocus('issuer')\" ng-blur=\"home.formFocus(false)\">\n" +
     "                    </div>\n" +
     "                </div>\n" +
+    "                <div class=\"row\">\n" +
+    "                    <div class=\"large-12 medium-12 columns\">\n" +
+    "                        <div class=\"right\" ng-hide=\"assetIssueForm.amount.$pristine && !assetIssueForm.amount.$modelValue \">\n" +
+    "                            <span class=\"has-error right size-12\" ng-show=\"assetIssueForm.amount.$invalid\">\n" +
+    "                                <i class=\"icon-close-circle size-14\"></i>\n" +
+    "                                <span clas=\"vm\" translate>Not valid</span>\n" +
+    "                            </span>\n" +
+    "                            <small class=\"text-primary right\" ng-show=\"!assetIssueForm.amount.$invalid\">\n" +
+    "                                <i class=\"icon-checkmark-circle size-14\"></i>\n" +
+    "                            </small>\n" +
+    "                        </div>\n" +
+    "                        <div>\n" +
+    "                            <label for=\"amount\">\n" +
+    "                                <span translate>Quantity</span>\n" +
+    "                            </label>\n" +
     "\n" +
-    "                <div>\n" +
-    "                    <div class=\"row collapse\">\n" +
-    "                        <label for=\"amount\" class=\"left\">\n" +
-    "                            <span translate>Quantity</span>\n" +
-    "                        </label>\n" +
-    "                    </div>\n" +
-    "                    <div class=\"input\">\n" +
-    "                        <input type=\"text\" id=\"amount\" name=\"amount\" ng-disabled=\"home.blockUx\"\n" +
-    "                               ng-attr-placeholder=\"{{'Quantity' | translate}}\" ng-model=\"issuance.amount\"\n" +
-    "                               required ng-focus=\"home.formFocus('amount')\" ng-blur=\"home.formFocus(false)\">\n" +
+    "                            <div class=\"input\">\n" +
+    "                                <input type=\"number\" id=\"amount\" ng-disabled=\"home.blockUx || home.lockAmount\" name=\"amount\"\n" +
+    "                                       ng-attr-placeholder=\"{{'Quantity'|translate}}\"\n" +
+    "                                       ng-model=\"issuance.amount\" required autocomplete=\"off\"\n" +
+    "                                       ng-focus=\"home.formFocus('amount')\" ng-blur=\"home.formFocus(false)\">\n" +
+    "                                <a class=\"postfix\" translate>units</a>\n" +
+    "                            </div>\n" +
+    "                        </div>\n" +
     "                    </div>\n" +
     "                </div>\n" +
     "                <div>\n" +
@@ -1336,11 +1349,11 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "                <div class=\"row\" ng-hide=\"home.hideAmount\">\n" +
     "                    <div class=\"large-12 medium-12 columns\">\n" +
     "                        <div class=\"right\" ng-hide=\"assetTransferForm.amount.$pristine && !assetTransferForm.amount.$modelValue \">\n" +
-    "                            <span class=\"has-error right size-12\" ng-if=\"assetTransferForm.amount.$invalid\">\n" +
+    "                            <span class=\"has-error right size-12\" ng-show=\"assetTransferForm.amount.$invalid\">\n" +
     "                                <i class=\"icon-close-circle size-14\"></i>\n" +
     "                                <span clas=\"vm\" translate>Not valid</span>\n" +
     "                            </span>\n" +
-    "                            <small class=\"text-primary right\" ng-if=\"!assetTransferForm.amount.$invalid\">\n" +
+    "                            <small class=\"text-primary right\" ng-show=\"!assetTransferForm.amount.$invalid\">\n" +
     "                                <i class=\"icon-checkmark-circle size-14\"></i>\n" +
     "                            </small>\n" +
     "                        </div>\n" +
@@ -1350,11 +1363,10 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "                            </label>\n" +
     "\n" +
     "                            <div class=\"input\">\n" +
-    "                                <input type=\"number\" id=\"amount\" ng-disabled=\"home.blockUx || lockAmount\"\n" +
-    "                                       name=\"amount\" ng-attr-placeholder=\"{{'Amount'|translate}}\"\n" +
-    "                                       ng-minlength=\"0.00000001\" ng-maxlength=\"10000000000\" ng-model=\"transfer._amount\"\n" +
-    "                                       valid-amount required autocomplete=\"off\" ng-focus=\"home.formFocus('amount')\"\n" +
-    "                                       ng-blur=\"home.formFocus(false)\">\n" +
+    "                                <input type=\"number\" id=\"amount\" ng-disabled=\"home.blockUx || home.lockAmount\" name=\"amount\"\n" +
+    "                                       ng-attr-placeholder=\"{{'Amount'|translate}}\"\n" +
+    "                                       ng-model=\"transfer._amount\" min=\"1\" max=\"{{ asset.asset.amount }}\" ng-pattern=\"/^\\d*$/\" required autocomplete=\"off\"\n" +
+    "                                       ng-focus=\"home.formFocus('amount')\" ng-blur=\"home.formFocus(false)\">\n" +
     "                                <a class=\"postfix\" translate>units</a>\n" +
     "                            </div>\n" +
     "                        </div>\n" +

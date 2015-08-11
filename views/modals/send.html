@@ -67,11 +67,11 @@
                 <div class="row" ng-hide="home.hideAmount">
                     <div class="large-12 medium-12 columns">
                         <div class="right" ng-hide="assetTransferForm.amount.$pristine && !assetTransferForm.amount.$modelValue ">
-                            <span class="has-error right size-12" ng-if="assetTransferForm.amount.$invalid">
+                            <span class="has-error right size-12" ng-show="assetTransferForm.amount.$invalid">
                                 <i class="icon-close-circle size-14"></i>
                                 <span clas="vm" translate>Not valid</span>
                             </span>
-                            <small class="text-primary right" ng-if="!assetTransferForm.amount.$invalid">
+                            <small class="text-primary right" ng-show="!assetTransferForm.amount.$invalid">
                                 <i class="icon-checkmark-circle size-14"></i>
                             </small>
                         </div>
@@ -81,11 +81,10 @@
                             </label>
 
                             <div class="input">
-                                <input type="number" id="amount" ng-disabled="home.blockUx || lockAmount"
-                                       name="amount" ng-attr-placeholder="{{'Amount'|translate}}"
-                                       ng-minlength="0.00000001" ng-maxlength="10000000000" ng-model="transfer._amount"
-                                       valid-amount required autocomplete="off" ng-focus="home.formFocus('amount')"
-                                       ng-blur="home.formFocus(false)">
+                                <input type="number" id="amount" ng-disabled="home.blockUx || home.lockAmount" name="amount"
+                                       ng-attr-placeholder="{{'Amount'|translate}}"
+                                       ng-model="transfer._amount" min="1" max="{{ asset.asset.amount }}" ng-pattern="/^\d*$/" required autocomplete="off"
+                                       ng-focus="home.formFocus('amount')" ng-blur="home.formFocus(false)">
                                 <a class="postfix" translate>units</a>
                             </div>
                         </div>
