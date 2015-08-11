@@ -24,6 +24,7 @@
 
     <div class="header-modal text-center">
         <img ng-src="{{ asset.icon }}" class="asset-image" ng-show="asset.icon"/>
+        <div class="asset-image cc-default-icon" ng-show="!asset.icon"></div>
         <div class="size-42">
             {{ asset.metadata.assetName }}
         </div>

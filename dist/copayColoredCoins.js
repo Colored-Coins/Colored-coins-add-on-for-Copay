@@ -900,7 +900,7 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "         class=\"row collapse assets-list\">\n" +
     "        <div class=\"small-1 columns text-center\">\n" +
     "            <img ng-src=\"{{ asset.icon }}\" class=\"asset-icon icon\" ng-show=\"asset.icon\"/>\n" +
-    "            <img class=\"asset-icon icon default-icon\" ng-hide=\"asset.icon\"/>\n" +
+    "            <img class=\"asset-icon icon cc-default-icon\" ng-hide=\"asset.icon\"/>\n" +
     "            &nbsp;\n" +
     "        </div>\n" +
     "        <div class=\"small-4 columns\">\n" +
@@ -1071,6 +1071,7 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "\n" +
     "    <div class=\"header-modal text-center\">\n" +
     "        <img ng-src=\"{{ asset.icon }}\" class=\"asset-image\" ng-show=\"asset.icon\"/>\n" +
+    "        <div class=\"asset-image cc-default-icon\" ng-show=\"!asset.icon\"></div>\n" +
     "        <div class=\"size-42\">\n" +
     "            {{ asset.metadata.assetName }}\n" +
     "        </div>\n" +
