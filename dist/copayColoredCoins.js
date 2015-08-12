@@ -1064,7 +1064,7 @@ angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCa
     "\n" +
     "    <section class=\"right-small\">\n" +
     "        <a class=\"p10\" ng-click=\"assets.openIssueModal()\">\n" +
-    "            <i class=\"fi-page-add size-24\"></i>\n" +
+    "            <i class=\"icon-plus-circle size-24\"></i>\n" +
     "        </a>\n" +
     "    </section>\n" +
     "\n" +
