@@ -196,8 +196,21 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   var self = this;
 
+  $scope.issuance = {
+    userData: []
+  };
+
+
   this.txStatusOpts = {
     templateUrl: 'colored-coins/views/modals/issue-status.html'
+  };
+
+  $scope.addField = function() {
+    $scope.issuance.userData.push({ name: '', value: ''});
+  };
+
+  $scope.removeField = function(field) {
+    lodash.pull($scope.issuance.userData, field);
   };
 
   $scope.issueAsset = function (form) {
@@ -813,7 +826,14 @@ function ColoredCoins($rootScope, profileService, configService, ccFeeService, b
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
         if (err) { return cb(err); }
 
-        var metadata = lodash.pick(issuance, ['assetName', 'description', 'issuer']);
+        var metadata = lodash.pick(issuance, ['assetName', 'description', 'issuer', 'userData']);
+        // convert { name: 'Color', value: 'Blue' } to { "Color" : "Blue" }
+        metadata.userData = lodash.reduce(metadata.userData, function(result, field) {
+          if (field.name != '' && field.value != '') {
+            result[field.name] = field.value;
+          }
+          return result;
+        }, {});
 
         var issuanceOpts = {
           issueAddress: financeUtxo.address,
@@ -1401,6 +1421,30 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "                               ng-focus=\"home.formFocus('description')\" ng-blur=\"home.formFocus(false)\">\n" +
     "                    </div>\n" +
     "                </div>\n" +
+    "\n" +
+    "                <h4 class=\"title\" translate>Metadata</h4>\n" +
+    "                <div>\n" +
+    "                    <div class=\"row\" ng-repeat=\"field in issuance.userData\">\n" +
+    "                        <div class=\"small-6 columns\">\n" +
+    "                            <input type=\"text\" ng-disabled=\"assets.blockUx\"\n" +
+    "                                   ng-attr-placeholder=\"{{'Name' | translate}}\" ng-model=\"field.name\">\n" +
+    "                        </div>\n" +
+    "                        <div class=\"small-6 columns\">\n" +
+    "                            <input type=\"text\" id=\"description\" name=\"description\" ng-disabled=\"assets.blockUx\"\n" +
+    "                                   ng-attr-placeholder=\"{{'Value' | translate}}\" ng-model=\"field.value\">\n" +
+    "                            <a class=\"postfix size-12 m0 text-gray\" ng-click=\"removeField(field)\">\n" +
+    "                                <i class=\"fi-minus-circle size-18\"></i>\n" +
+    "                            </a>\n" +
+    "                        </div>\n" +
+    "                    </div>\n" +
+    "                </div>\n" +
+    "                <div class=\"text-center\">\n" +
+    "                    <a ng-click=\"addField()\" class=\"button outline round light-gray tiny cc-add-field-button\">\n" +
+    "                        <i class=\"fi-plus size-18 vm\"></i>\n" +
+    "                        <span translate>Add field</span>\n" +
+    "                    </a>\n" +
+    "                </div>\n" +
+    "\n" +
     "                <div class=\"row\" ng-show=\"!home.onGoingProcess\">\n" +
     "                    <div class=\"columns\"\n" +
     "                         ng-class=\"{'small-6 medium-6 large-6':(home.lockAddress || home.lockAmount)}\">\n" +

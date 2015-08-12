@@ -8,8 +8,21 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   var self = this;
 
+  $scope.issuance = {
+    userData: []
+  };
+
+
   this.txStatusOpts = {
     templateUrl: 'colored-coins/views/modals/issue-status.html'
+  };
+
+  $scope.addField = function() {
+    $scope.issuance.userData.push({ name: '', value: ''});
+  };
+
+  $scope.removeField = function(field) {
+    lodash.pull($scope.issuance.userData, field);
   };
 
   $scope.issueAsset = function (form) {

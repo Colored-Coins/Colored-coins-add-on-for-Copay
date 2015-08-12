@@ -90,6 +90,30 @@
                                ng-focus="home.formFocus('description')" ng-blur="home.formFocus(false)">
                     </div>
                 </div>
+
+                <h4 class="title" translate>Metadata</h4>
+                <div>
+                    <div class="row" ng-repeat="field in issuance.userData">
+                        <div class="small-6 columns">
+                            <input type="text" ng-disabled="assets.blockUx"
+                                   ng-attr-placeholder="{{'Name' | translate}}" ng-model="field.name">
+                        </div>
+                        <div class="small-6 columns">
+                            <input type="text" id="description" name="description" ng-disabled="assets.blockUx"
+                                   ng-attr-placeholder="{{'Value' | translate}}" ng-model="field.value">
+                            <a class="postfix size-12 m0 text-gray" ng-click="removeField(field)">
+                                <i class="fi-minus-circle size-18"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <a ng-click="addField()" class="button outline round light-gray tiny cc-add-field-button">
+                        <i class="fi-plus size-18 vm"></i>
+                        <span translate>Add field</span>
+                    </a>
+                </div>
+
                 <div class="row" ng-show="!home.onGoingProcess">
                     <div class="columns"
                          ng-class="{'small-6 medium-6 large-6':(home.lockAddress || home.lockAmount)}">
