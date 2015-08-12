@@ -8,6 +8,10 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   var self = this;
 
+  this.txStatusOpts = {
+    templateUrl: 'colored-coins/views/modals/issue-status.html'
+  };
+
   $scope.issueAsset = function (form) {
     var modalScope = this;
 

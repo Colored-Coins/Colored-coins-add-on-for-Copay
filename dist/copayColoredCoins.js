@@ -196,6 +196,10 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   var self = this;
 
+  this.txStatusOpts = {
+    templateUrl: 'colored-coins/views/modals/issue-status.html'
+  };
+
   $scope.issueAsset = function (form) {
     var modalScope = this;
 
@@ -252,7 +256,7 @@ function ProcessingTxController($rootScope, $scope, $timeout, $log, coloredCoins
   this.$modalInstance = $modalInstance;
 
   this.txStatusOpts = {
-    templateUrl: 'colored-coins/views/modals/asset-status.html'
+    templateUrl: 'colored-coins/views/modals/transfer-status.html'
   };
 
   var self = this;
@@ -895,7 +899,7 @@ angular.module('copayAddon.coloredCoins')
       }
     });
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/includes/transaction.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/asset-status.html', 'colored-coins/views/modals/issue.html', 'colored-coins/views/modals/send.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/asset-status.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/includes/transaction.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/issue-status.html', 'colored-coins/views/modals/issue.html', 'colored-coins/views/modals/send.html', 'colored-coins/views/modals/transfer-status.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
@@ -979,6 +983,53 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "</div>\n" +
     "<div class=\"extra-margin-bottom\"></div>\n" +
     "<div ng-include=\"'views/includes/menu.html'\" ng-show=\"!index.noFocusedWallet\"></div>\n" +
+    "");
+}]);
+
+angular.module("colored-coins/views/includes/asset-status.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/includes/asset-status.html",
+    "<div ng-if=\"type == 'broadcasted'\" class=\"popup-txsent\">\n" +
+    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 text-white text-bold tu p20\">\n" +
+    "        <span translate>{{ status.broadcasted }}</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline round white tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "\n" +
+    "\n" +
+    "<div ng-if=\"type == 'created'\" class=\"popup-txsigned\">\n" +
+    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 text-primary tu text-bold p20\">\n" +
+    "        <span translate>{{ status.created }}</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "\n" +
+    "\n" +
+    "\n" +
+    "<div ng-if=\"type == 'accepted'\" class=\"popup-txsigned\">\n" +
+    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 text-primary tu text-bold p20\">\n" +
+    "        <span translate>{{ status.accepted }}</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "\n" +
+    "<div ng-if=\"type=='rejected'\" class=\"popup-txrejected\">\n" +
+    "    <i class=\"fi-x small-centered columns m20tp\"></i>\n" +
+    "    <div class=\"text-center size-18 tu text-warning text-bold p20\">\n" +
+    "        <span translate>{{ status.rejected }}</span>\n" +
+    "    </div>\n" +
+    "    <div class=\"text-center\">\n" +
+    "        <a class=\"button outline light-gray round tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
     "");
 }]);
 
@@ -1245,51 +1296,15 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "</div>");
 }]);
 
-angular.module("colored-coins/views/modals/asset-status.html", []).run(["$templateCache", function($templateCache) {
-  $templateCache.put("colored-coins/views/modals/asset-status.html",
-    "<div ng-if=\"type == 'broadcasted'\" class=\"popup-txsent\">\n" +
-    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
-    "    <div class=\"text-center size-18 text-white text-bold tu p20\">\n" +
-    "        <span translate>Asset Transferred</span>\n" +
-    "    </div>\n" +
-    "    <div class=\"text-center\">\n" +
-    "        <a class=\"button outline round white tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
-    "    </div>\n" +
-    "</div>\n" +
-    "\n" +
-    "\n" +
-    "<div ng-if=\"type == 'created'\" class=\"popup-txsigned\">\n" +
-    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
-    "    <div class=\"text-center size-18 text-primary tu text-bold p20\">\n" +
-    "        <span translate>Asset Transfer Proposal Created</span>\n" +
-    "    </div>\n" +
-    "    <div class=\"text-center\">\n" +
-    "        <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
-    "    </div>\n" +
-    "</div>\n" +
-    "\n" +
-    "\n" +
-    "\n" +
-    "<div ng-if=\"type == 'accepted'\" class=\"popup-txsigned\">\n" +
-    "    <i class=\"small-centered columns fi-check m20tp\"></i>\n" +
-    "    <div class=\"text-center size-18 text-primary tu text-bold p20\">\n" +
-    "        <span translate>Asset Transfer Accepted</span>\n" +
-    "    </div>\n" +
-    "    <div class=\"text-center\">\n" +
-    "        <a class=\"button outline round light-gray tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
-    "    </div>\n" +
-    "</div>\n" +
-    "\n" +
-    "<div ng-if=\"type=='rejected'\" class=\"popup-txrejected\">\n" +
-    "    <i class=\"fi-x small-centered columns m20tp\"></i>\n" +
-    "    <div class=\"text-center size-18 tu text-warning text-bold p20\">\n" +
-    "        <span translate>Asset Transfer Rejected</span>\n" +
-    "    </div>\n" +
-    "    <div class=\"text-center\">\n" +
-    "        <a class=\"button outline light-gray round tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
-    "    </div>\n" +
-    "</div>\n" +
-    "");
+angular.module("colored-coins/views/modals/issue-status.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/modals/issue-status.html",
+    "{{ status = {\n" +
+    "    created: 'Asset Issuance Proposal Created',\n" +
+    "    broadcasted: 'Asset Issued',\n" +
+    "    accepted: 'Asset Issuance Accepted',\n" +
+    "    rejected: 'Asset Issuance Rejected'\n" +
+    "   };\"\" }}\n" +
+    "<div ng-include=\"'colored-coins/views/includes/asset-status.html'\"></div>");
 }]);
 
 angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache", function($templateCache) {
@@ -1517,4 +1532,15 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "    </div>\n" +
     "    <div class=\"extra-margin-bottom\"></div>\n" +
     "</div> <!-- END Send -->");
+}]);
+
+angular.module("colored-coins/views/modals/transfer-status.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/modals/transfer-status.html",
+    "{{ status = {\n" +
+    "    created: 'Asset Transfer Proposal Created',\n" +
+    "    broadcasted: 'Asset Transferred',\n" +
+    "    accepted: 'Asset Transfer Accepted',\n" +
+    "    rejected: 'Asset Transfer Rejected'\n" +
+    "   };\"\" }}\n" +
+    "<div ng-include=\"'colored-coins/views/includes/asset-status.html'\"></div>");
 }]);

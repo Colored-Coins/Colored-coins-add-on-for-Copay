@@ -16,7 +16,7 @@ function ProcessingTxController($rootScope, $scope, $timeout, $log, coloredCoins
   this.$modalInstance = $modalInstance;
 
   this.txStatusOpts = {
-    templateUrl: 'colored-coins/views/modals/asset-status.html'
+    templateUrl: 'colored-coins/views/modals/transfer-status.html'
   };
 
   var self = this;
