@@ -23,6 +23,8 @@
     "tests"
   ],
   "dependencies": {
+    "aws-sdk": "^2.1.44",
+    "formidable": "^1.0.17",
     "http-proxy": "~1.11.1"
   },
   "devDependencies": {
