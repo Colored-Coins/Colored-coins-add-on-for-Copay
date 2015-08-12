@@ -1,8 +1,10 @@
 'use strict';
 
-function ColoredCoins($rootScope, profileService, configService, bitcore, $http, $log, lodash) {
+function ColoredCoins($rootScope, profileService, configService, ccFeeService, bitcore, $http, $log, lodash) {
+  var SATOSHIS_FOR_ISSUANCE_COLORING = 1300;
+  var SATOSHIS_FOR_TRANSFER_COLORING = 600;
+
   var defaultConfig = {
-    fee: 49000,
     api: {
       testnet: 'testnet.api.coloredcoins.org',
       livenet: 'api.coloredcoins.org'
@@ -164,10 +166,6 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
     return asset.assetId + "/" + asset.utxo.txid + ":" + asset.utxo.index;
   };
 
-  root.defaultFee = function() {
-    return _config().fee || defaultConfig.fee;
-  };
-
   root.getColoredUtxos = function() {
     return lodash.map(root.assets, function(asset) { return asset.utxo.txid + ":" + asset.utxo.index; });
   };
@@ -259,64 +257,76 @@ function ColoredCoins($rootScope, profileService, configService, bitcore, $http,
       });
     }
 
-    // We need extra 600 satoshis if we have change transfer
-    var financeAmount = root.defaultFee() + 600 * (to.length - 1);
+    var nInputs = 2; // asset address + finance utxo
+    var nOutputs = to.length == 2 ? 3 : 2; // outputs for transfer coloring scheme
 
-    selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
-      if (err) { return cb(err); }
+    ccFeeService.estimateFee(nInputs, nOutputs, function(err, fee) {
+      // We need extra satoshis if we have change transfer
+      var financeAmount = fee + SATOSHIS_FOR_TRANSFER_COLORING * (to.length - 1);
+      $log.debug("Funds required for transfer: " + financeAmount);
 
-      var transfer = {
-        from: asset.address,
-        fee: root.defaultFee(),
-        to: to,
-        financeOutput: {
-          value: financeUtxo.satoshis,
-          n: financeUtxo.vout,
-          scriptPubKey: {
-            asm: new bitcore.Script(financeUtxo.scriptPubKey).toString(),
-            hex: financeUtxo.scriptPubKey,
-            type: 'scripthash'
-          }
-        },
-        financeOutputTxid: financeUtxo.txid
-      };
+      selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
+        if (err) { return cb(err); }
 
-      console.log(JSON.stringify(transfer, null, 2));
-      var network = fc.credentials.network;
-      postTo('sendasset', transfer, network, cb);
+        var transfer = {
+          from: asset.address,
+          fee: fee,
+          to: to,
+          financeOutput: {
+            value: financeUtxo.satoshis,
+            n: financeUtxo.vout,
+            scriptPubKey: {
+              asm: new bitcore.Script(financeUtxo.scriptPubKey).toString(),
+              hex: financeUtxo.scriptPubKey,
+              type: 'scripthash'
+            }
+          },
+          financeOutputTxid: financeUtxo.txid
+        };
+
+        console.log(JSON.stringify(transfer, null, 2));
+        var network = fc.credentials.network;
+        postTo('sendasset', transfer, network, cb);
+      });
     });
   };
 
   root.createIssueTx = function(issuance, cb) {
-    var fc = profileService.focusedClient;
 
-    var financeAmount = root.defaultFee() + 1300;
+    var nInputs = 1; // issuing address
+    var nOutputs = 3; // outputs for issuance coloring scheme
 
-    selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
-      if (err) { return cb(err); }
+    ccFeeService.estimateFee(nInputs, nOutputs, function(err, fee) {
+      var fc = profileService.focusedClient;
+      var financeAmount = fee + SATOSHIS_FOR_ISSUANCE_COLORING;
+      $log.debug("Funds required for issuance: " + financeAmount);
 
-      var metadata = lodash.pick(issuance, ['assetName', 'description', 'issuer']);
+      selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
+        if (err) { return cb(err); }
 
-      var issuanceOpts = {
-        issueAddress: financeUtxo.address,
-        fee: root.defaultFee(),
-        divisibility: 0,
-        amount: issuance.amount,
-        reissueable: false,
-        transfer: [{
-          'address': financeUtxo.address,
-          'amount': issuance.amount
-        }],
-        metadata: metadata
-      };
+        var metadata = lodash.pick(issuance, ['assetName', 'description', 'issuer']);
 
-      console.log(JSON.stringify(issuanceOpts, null, 2));
-      var network = fc.credentials.network;
-      postTo('issue', issuanceOpts, network, function (err, data) {
-        if (data) {
-          data.issuanceUtxo = financeUtxo;
-        }
-        return cb(err, data);
+        var issuanceOpts = {
+          issueAddress: financeUtxo.address,
+          fee: fee,
+          divisibility: 0,
+          amount: issuance.amount,
+          reissueable: false,
+          transfer: [{
+            'address': financeUtxo.address,
+            'amount': issuance.amount
+          }],
+          metadata: metadata
+        };
+
+        console.log(JSON.stringify(issuanceOpts, null, 2));
+        var network = fc.credentials.network;
+        postTo('issue', issuanceOpts, network, function (err, data) {
+          if (data) {
+            data.issuanceUtxo = financeUtxo;
+          }
+          return cb(err, data);
+        });
       });
     });
   };
