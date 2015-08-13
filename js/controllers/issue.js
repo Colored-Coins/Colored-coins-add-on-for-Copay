@@ -1,7 +1,7 @@
 'use strict';
 
 var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                     profileService, feeService, lodash, bitcore, txStatus) {
+                                     profileService, feeService, lodash, bitcore, txStatus, ccConfig, Upload) {
 
   ProcessingTxController.call(this, $rootScope, $scope, $timeout, $log, coloredCoins, gettext, profileService, feeService,
       lodash, bitcore, txStatus, $modalInstance);
@@ -42,22 +42,41 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
       return;
     }
 
-    self.setOngoingProcess(gettext('Creating issuance transaction'));
-    coloredCoins.createIssueTx(modalScope.issuance, function (err, result) {
-      if (err) {
-        self._handleError(err);
+    Upload.upload({
+      url: ccConfig.config().uploadHost + '/upload',
+      file: this.file
+    }).success(function (iconData, status, headers, config) {
+      if (!iconData.url || iconData.url.indexOf('https://s3') != 0) {
+        console.log('Error uploading: ' + status + ' ' + iconData);
+        return self._handleError({ error: 'Failed to upload icon'});
       }
-
-      var metadata = {
-        asset: {
-          action: 'issue',
-          assetName: modalScope.issuance.assetName,
-          //icon: $scope.asset.icon,
-          amount: modalScope.issuance.amount
+      console.log('Icon uploaded. URL: ' + iconData);
+      modalScope.issuance.urls = [
+        {
+          name: "icon",
+          url: iconData.url,
+          mimeType: iconData.mimeType
+        }];
+      self.setOngoingProcess(gettext('Creating issuance transaction'));
+      coloredCoins.createIssueTx(modalScope.issuance, function (err, result) {
+        if (err) {
+          self._handleError(err);
         }
-      };
-      self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, metadata);
-    });
+
+        var metadata = {
+          asset: {
+            action: 'issue',
+            assetName: modalScope.issuance.assetName,
+            icon: iconData.url,
+            amount: modalScope.issuance.amount
+          }
+        };
+        self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, metadata);
+      });
+    }).error(function (data, status, headers, config) {
+      console.log('error uploading icon: ' + status + " " + data);
+      self._handleError({ error: data });
+    })
   };
 };
 

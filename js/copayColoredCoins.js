@@ -1,5 +1,5 @@
 
-var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates']);
+var module = angular.module('copayAddon.coloredCoins', ['copayAssetViewTemplates', 'ngFileUpload']);
 
 module
     .config(function ($stateProvider) {

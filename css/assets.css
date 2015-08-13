@@ -107,3 +107,33 @@
 .cc-add-field-button {
     padding: 0.6rem 0.8rem 0.4rem !important;
 }
+
+.cc-icon-dropbox {
+    position: relative;
+    width: 168px;
+    height: 168px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.cc-icon-dropbox img {
+    width: 168px;
+    height: 168px;
+    border: 1px solid #A5B2BF;
+    background-color: #F8FAFE;
+    border-radius: 50%;
+    display: inline-block;
+    background-size: 168px 168px;
+    background-repeat: no-repeat;
+}
+
+.cc-icon-dropbox img.clear {
+    background-image: none !important;
+}
+
+.cc-icon-dropbox span {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    left: 50%;
+    top: 50%;
+}

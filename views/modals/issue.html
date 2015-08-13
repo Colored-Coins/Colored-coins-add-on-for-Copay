@@ -27,6 +27,14 @@
                     <a class="close-notification text-warning">&#215;</a>
                 </div>
 
+                <div class="text-center">
+                    <div class="cc-icon-dropbox" ngf-drop ngf-select ng-model="file"
+                         ngf-drag-over-class="dragover" ngf-multiple="false" ngf-allow-dir="false">
+                        <img ngf-background="file" ngf-accept="'image/*'" ng-class="{ 'clear': !file }">
+                        <span ng-hide="file">Add icon</span>
+                    </div>
+                </div>
+
                 <div>
                     <div class="row collapse">
                         <label for="assetName" class="left">

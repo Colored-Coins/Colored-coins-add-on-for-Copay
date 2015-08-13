@@ -18,7 +18,8 @@ module.exports = function (grunt) {
           './js/filters/*.js',
           './js/services/*.js',
           './js/directives/*.js',
-          './dist/templates.js'
+          './dist/templates.js',
+          './bower_components/ng-file-upload/ng-file-upload.js'
         ],
         dest: './dist/copayColoredCoins.js'
       }

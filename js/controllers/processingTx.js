@@ -50,9 +50,6 @@ ProcessingTxController.prototype._setError = function (err) {
 
   this.$scope.error = errMessage;
 
-  this.$timeout(function () {
-    this.$scope.$digest();
-  }, 1);
 };
 
 ProcessingTxController.prototype._handleError = function(err) {
