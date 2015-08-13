@@ -5,6 +5,7 @@ var MAX_IMAGE_SIZE = 300000;
 var formidable = require('formidable'),
     AWS = require('aws-sdk'),
     fs = require('fs'),
+    crypto = require("crypto"),
     http = require('http');
 
 AWS.config.region = 'eu-central-1';
@@ -24,19 +25,24 @@ var sendError = function(res, err) {
 
 var s3bucket = new AWS.S3({params: {Bucket: bucket}});
 http.createServer(function(req, res) {
-  if (req.url == '/upload' && req.method.toLowerCase() == 'post') {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-type');
+
+  if (req.url.match(/\/+upload/) && req.method.toLowerCase() == 'post') {
     // parse a file upload
     var form = new formidable.IncomingForm();
 
     var icon;
     var key;
     form.parse(req, function(err, fields, files) {
-      icon = files.upload;
-      key = fields.title + icon.name.substr(icon.name.lastIndexOf('.'));
+      icon = files.file;
+      if (icon) {
+        key = crypto.randomBytes(20).toString('hex') + icon.name.substr(icon.name.lastIndexOf('.'));
+      }
     });
 
     form.on('end', function() {
-      if (isImage(icon.type) && icon.size < MAX_IMAGE_SIZE) {
+      if (icon && isImage(icon.type) && icon.size < MAX_IMAGE_SIZE) {
         fs.readFile(icon.path, function(err, data) {
           if (err) {
             return sendError(res, err);
@@ -47,7 +53,11 @@ http.createServer(function(req, res) {
               return sendError(res, err);
             } else {
               res.writeHead(200, {'content-type': 'application/json'});
-              res.write('https://s3.' + AWS.config.region + '.amazonaws.com/' + bucket + '/' + encodeURIComponent(key));
+              var iconData = {
+                url: 'https://s3.' + AWS.config.region + '.amazonaws.com/' + bucket + '/' + encodeURIComponent(key),
+                mimeType: icon.type
+              };
+              res.write(JSON.stringify(iconData));
               res.end();
             }
           });
@@ -58,17 +68,19 @@ http.createServer(function(req, res) {
         res.end();
       }
     });
+  } else {
+    // show a file upload form
+    res.writeHead(200, {'content-type': 'text/html'});
+/*
+    res.write(
+        '<form action="/upload" enctype="multipart/form-data" method="post">'+
+            '<input type="text" name="title"><br>'+
+            '<input type="file" name="upload" multiple="multiple"><br>'+
+            '<input type="submit" value="Upload">'+
+            '</form>'
+    );
+*/
+    res.end();
   }
 
-/*
-  // show a file upload form
-  res.writeHead(200, {'content-type': 'text/html'});
-  res.end(
-      '<form action="/upload" enctype="multipart/form-data" method="post">'+
-          '<input type="text" name="title"><br>'+
-          '<input type="file" name="upload" multiple="multiple"><br>'+
-          '<input type="submit" value="Upload">'+
-          '</form>'
-  );
-*/
 }).listen(8200);
