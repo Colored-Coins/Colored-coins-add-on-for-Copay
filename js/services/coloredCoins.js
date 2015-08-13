@@ -1,15 +1,8 @@
 'use strict';
 
-function ColoredCoins($rootScope, profileService, configService, ccFeeService, bitcore, $http, $log, lodash) {
+function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcore, $http, $log, lodash) {
   var SATOSHIS_FOR_ISSUANCE_COLORING = 1300;
   var SATOSHIS_FOR_TRANSFER_COLORING = 600;
-
-  var defaultConfig = {
-    api: {
-      testnet: 'testnet.api.coloredcoins.org',
-      livenet: 'api.coloredcoins.org'
-    }
-  };
 
   var root = {},
       lockedUtxos = [],
@@ -39,19 +32,6 @@ function ColoredCoins($rootScope, profileService, configService, ccFeeService, b
     disableBalanceListener();
   });
 
-
-  var _config = function() {
-    return configService.getSync()['coloredCoins'] || defaultConfig;
-  };
-
-  var apiHost = function(network) {
-    if (!_config()['api'] || ! _config()['api'][network]) {
-      return defaultConfig.api[network];
-    } else {
-      return _config().api[network];
-    }
-  };
-
   var handleResponse = function (data, status, cb) {
     $log.debug('Status: ', status);
     $log.debug('Body: ', JSON.stringify(data));
@@ -64,7 +44,7 @@ function ColoredCoins($rootScope, profileService, configService, ccFeeService, b
 
   var getFrom = function (api_endpoint, param, network, cb) {
     $log.debug('Get from:' + api_endpoint + '/' + param);
-    $http.get('http://' + apiHost(network) + '/v2/' + api_endpoint + '/' + param)
+    $http.get('http://' + ccConfig.apiHost(network) + '/v2/' + api_endpoint + '/' + param)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })
@@ -75,7 +55,7 @@ function ColoredCoins($rootScope, profileService, configService, ccFeeService, b
 
   var postTo = function(api_endpoint, json_data, network, cb) {
     $log.debug('Post to:' + api_endpoint + ". Data: " + JSON.stringify(json_data));
-    $http.post('http://' + apiHost(network) + '/v2/' + api_endpoint, json_data)
+    $http.post('http://' + ccConfig.apiHost(network) + '/v2/' + api_endpoint, json_data)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })
