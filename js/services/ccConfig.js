@@ -3,8 +3,7 @@
 
 angular.module('copayAddon.coloredCoins')
     .service('ccConfig', function (configService, lodash) {
-      var root = {},
-          configObject;
+      var root = {};
 
       var defaultConfig = {
         api: {
@@ -14,10 +13,7 @@ angular.module('copayAddon.coloredCoins')
       };
 
       root.config = function() {
-        if (!configObject) {
-          configObject = lodash.defaults(configService.getSync()['coloredCoins'], defaultConfig);
-        }
-        return configObject;
+        return lodash.defaults(configService.getSync()['coloredCoins'], defaultConfig);
       };
 
       return root;
