@@ -23,13 +23,13 @@
 .cc-default-icon.icon {
     width: 25px;
     height: 25px;
-    background-size: 25px;
+    background-size: 25px 25px;
 }
 
 .cc-menu-icon {
     width: 24px;
     height: 24px;
-    background-size: 24px;
+    background-size: 24px 24px;
     margin-bottom: -6px;
     display: inline-block !important;
     background-repeat: no-repeat;
@@ -57,6 +57,7 @@
     .assets-list .asset-icon {
         border-radius: 50%;
         height: 25px;
+        width: 25px;
     }
 
 .asset-alert i {
