@@ -1370,7 +1370,6 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "    </section>\n" +
     "\n" +
     "    <section class=\"right-small\">\n" +
-    "        <qr-scanner on-scan=\"onQrCodeScanned(data)\" />\n" +
     "    </section>\n" +
     "</nav>\n" +
     "\n" +
@@ -1385,10 +1384,10 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "                    <a class=\"close-notification text-warning\">&#215;</a>\n" +
     "                </div>\n" +
     "\n" +
-    "                <div class=\"text-center\">\n" +
+    "                <div class=\"text-center m10b\">\n" +
     "                    <div class=\"cc-icon-dropbox\" ngf-drop ngf-select ng-model=\"file\"\n" +
     "                         ngf-drag-over-class=\"dragover\" ngf-multiple=\"false\" ngf-allow-dir=\"false\">\n" +
-    "                        <img ngf-background=\"file\" ngf-accept=\"'image/*'\" ng-class=\"{ 'clear': !file }\">\n" +
+    "                        <img ngf-src=\"file\" ngf-accept=\"'image/*'\" ng-show=\"file\">\n" +
     "                        <span ng-hide=\"file\">Add icon</span>\n" +
     "                    </div>\n" +
     "                </div>\n" +
