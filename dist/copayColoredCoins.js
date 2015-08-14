@@ -613,7 +613,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var getFrom = function (api_endpoint, param, network, cb) {
     $log.debug('Get from:' + api_endpoint + '/' + param);
-    $http.get('http://' + ccConfig.config().api[network] + '/v2/' + api_endpoint + '/' + param)
+    $http.get(ccConfig.config().api[network] + '/v2/' + api_endpoint + '/' + param)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })
@@ -624,7 +624,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var postTo = function(api_endpoint, json_data, network, cb) {
     $log.debug('Post to:' + api_endpoint + ". Data: " + JSON.stringify(json_data));
-    $http.post('http://' + ccConfig.config().api[network] + '/v2/' + api_endpoint, json_data)
+    $http.post(ccConfig.config().api[network] + '/v2/' + api_endpoint, json_data)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })
