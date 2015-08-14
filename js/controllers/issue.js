@@ -75,7 +75,7 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
       });
     }).error(function (data, status, headers, config) {
       console.log('error uploading icon: ' + status + " " + data);
-      self._handleError({ error: data });
+      self._handleError({ error: "Failed to upload icon" });
     })
   };
 };

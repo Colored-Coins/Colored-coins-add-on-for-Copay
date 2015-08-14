@@ -17,7 +17,7 @@ var isImage = function(mime) {
 };
 
 var sendError = function(res, err) {
-  res.writeHead(500, {'content-type': 'application/json'});
+  res.writeHead(500, {'content-type': 'text/plain'});
   res.write(err.toString());
   console.log(err);
   res.end();
