@@ -27,30 +27,28 @@ Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support 
     ````
     'bower_components/copay-colored-coins-plugin/css/assets.css'
     ````
-4. Colored Coins API doesn't have CORS at the moment. To workaround this start API proxy:
-   Install:
+4. Add the following to Copay config (replace ``localhost`` with your host if deploying for public):
 
-   ````
-   cd bower_components/copay-colored-coins-plugin/ && npm install && cd -
-   ````
-   
-   and run:
-   
-    ````
-    node bower_components/copay-colored-coins-plugin/server/apiProxy.js
-    ````
-    
-    and add the following to Copay config:
-    
     ````
     coloredCoins: {
       api: {
-        testnet: 'localhost:8000',
-        livenet: 'localhost:8100'
-      }
+        testnet: 'http://localhost:8000',
+        livenet: 'http://localhost:8100'
+      },
+      uploadHost: 'http://localhost:8200'
     },
     ````
-    
+
+5. Run services
+
+   For development: run with [foreman](http://ddollar.github.io/foreman/):
+   
+    ````
+    foreman start -f bower_components/copay-colored-coins-plugin/Procfile
+    ````
+
+   In production: [export to Upstart](http://ddollar.github.io/foreman/#EXPORTING)
+
 5. Rebuild Copay:
 
     ````
