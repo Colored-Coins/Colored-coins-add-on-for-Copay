@@ -7,9 +7,18 @@
     padding: 0 !important;
 }
 
-.asset-image {
-    max-height: 168px;
-    max-width: 168px;
+.cc-asset-icon {
+    position: relative;
+    display: inline-block;
+    width: 168px;
+    height: 168px;
+}
+
+.cc-asset-icon img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .cc-default-icon {
@@ -113,21 +122,9 @@
     position: relative;
     width: 168px;
     height: 168px;
-    border-radius: 50%;
     background-color: #F8FAFE;
     display: inline-block;
     cursor: pointer;
-}
-
-.cc-icon-dropbox img {
-    width: 168px;
-    height: 168px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.cc-icon-dropbox img.clear {
-    background-image: none !important;
 }
 
 .cc-icon-dropbox span {

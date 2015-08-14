@@ -27,9 +27,9 @@
                 </div>
 
                 <div class="text-center m10b">
-                    <div class="cc-icon-dropbox" ngf-drop ngf-select ng-model="file"
+                    <div class="cc-icon-dropbox cc-asset-icon" ngf-drop ngf-select ngf-accept="'image/*'" ng-model="file"
                          ngf-drag-over-class="dragover" ngf-multiple="false" ngf-allow-dir="false">
-                        <img ngf-src="file" ngf-accept="'image/*'" ng-show="file">
+                        <img ngf-src="file" ng-show="file">
                         <span ng-hide="file">Add icon</span>
                     </div>
                 </div>

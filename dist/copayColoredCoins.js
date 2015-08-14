@@ -1220,8 +1220,10 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "    </div>\n" +
     "\n" +
     "    <div class=\"header-modal text-center\">\n" +
-    "        <img ng-src=\"{{ asset.icon }}\" class=\"asset-image\" ng-show=\"asset.icon\"/>\n" +
-    "        <div class=\"asset-image cc-default-icon\" ng-show=\"!asset.icon\"></div>\n" +
+    "        <div class=\"cc-asset-icon\">\n" +
+    "            <img ng-src=\"{{ asset.icon }}\" ng-show=\"asset.icon\"/>\n" +
+    "            <div class=\"cc-default-icon\" ng-show=\"!asset.icon\"></div>\n" +
+    "        </div>\n" +
     "        <div class=\"size-42\">\n" +
     "            {{ asset.metadata.assetName }}\n" +
     "        </div>\n" +
@@ -1385,9 +1387,9 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "                </div>\n" +
     "\n" +
     "                <div class=\"text-center m10b\">\n" +
-    "                    <div class=\"cc-icon-dropbox\" ngf-drop ngf-select ng-model=\"file\"\n" +
+    "                    <div class=\"cc-icon-dropbox cc-asset-icon\" ngf-drop ngf-select ngf-accept=\"'image/*'\" ng-model=\"file\"\n" +
     "                         ngf-drag-over-class=\"dragover\" ngf-multiple=\"false\" ngf-allow-dir=\"false\">\n" +
-    "                        <img ngf-src=\"file\" ngf-accept=\"'image/*'\" ng-show=\"file\">\n" +
+    "                        <img ngf-src=\"file\" ng-show=\"file\">\n" +
     "                        <span ng-hide=\"file\">Add icon</span>\n" +
     "                    </div>\n" +
     "                </div>\n" +
