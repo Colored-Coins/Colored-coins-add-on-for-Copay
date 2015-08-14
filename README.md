@@ -1,4 +1,4 @@
-Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support for [Colored Coins](http://coloredcoins.org).
+[Copay](https://github.com/bitpay/copay) addon with support for [Colored Coins](http://coloredcoins.org).
 
 ## Installation
 
@@ -39,7 +39,10 @@ Experimental plugin for [Copay](https://github.com/bitpay/copay) adding support 
     },
     ````
 
-5. Run services
+5. Addon uses S3 bucket to store uploaded asset icons. Configuration:
+   - [Configure AWS profile](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html). It should have ``PutObject`` permission on you bucket.
+   - Change profile, bucket and region names in ``bower_components/copay-colored-coins-plugin/Procfile``
+6. Run services
 
    For development: run with [foreman](http://ddollar.github.io/foreman/):
    
