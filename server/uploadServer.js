@@ -8,9 +8,19 @@ var formidable = require('formidable'),
     crypto = require("crypto"),
     http = require('http');
 
-AWS.config.region = 'eu-central-1';
+var aws_region = process.env.S3_REGION;
+var bucket = process.env.S3_BUCKET;
 
-var bucket = 'copay-asset-icons';
+if (!bucket) {
+  console.log("Error: Missing S3_BUCKET env variable");
+  return 1;
+}
+if (!aws_region) {
+  console.log("Error: Missing S3_REGION env variable");
+  return 1;
+}
+
+AWS.config.region = aws_region;
 
 var isImage = function(mime) {
   return mime.indexOf('image/') == 0;
