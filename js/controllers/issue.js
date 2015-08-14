@@ -46,7 +46,7 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   var createAssetWithIcon = function(issuance, icon) {
     Upload.upload({
-      url: ccConfig.config().uploadHost + '/upload',
+      url: ccConfig.uploadHost + '/upload',
       file: icon
     }).success(function (iconData, status, headers, config) {
       if (!iconData.url || iconData.url.indexOf('https://s3') != 0) {

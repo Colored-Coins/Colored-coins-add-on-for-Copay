@@ -42,14 +42,9 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     return cb(null, data);
   };
 
-  var apiHost = function(network) {
-    var apiHost = ccConfig.config().api[network];
-    return apiHost.indexOf('http') < 0 ? 'http://' + apiHost : apiHost;
-  };
-
   var getFrom = function (api_endpoint, param, network, cb) {
     $log.debug('Get from:' + api_endpoint + '/' + param);
-    $http.get(apiHost(network) + '/v2/' + api_endpoint + '/' + param)
+    $http.get(ccConfig.api[network] + '/v2/' + api_endpoint + '/' + param)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })
@@ -60,7 +55,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var postTo = function(api_endpoint, json_data, network, cb) {
     $log.debug('Post to:' + api_endpoint + ". Data: " + JSON.stringify(json_data));
-    $http.post(apiHost(network) + '/v2/' + api_endpoint, json_data)
+    $http.post(ccConfig.api[network] + '/v2/' + api_endpoint, json_data)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })

@@ -234,7 +234,7 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   var createAssetWithIcon = function(issuance, icon) {
     Upload.upload({
-      url: ccConfig.config().uploadHost + '/upload',
+      url: ccConfig.uploadHost + '/upload',
       file: icon
     }).success(function (iconData, status, headers, config) {
       if (!iconData.url || iconData.url.indexOf('https://s3') != 0) {
@@ -508,27 +508,6 @@ AssetTransferController.prototype = Object.create(ProcessingTxController.prototy
 
 
 angular.module('copayAddon.coloredCoins')
-    .service('ccConfig', function (configService, lodash) {
-      var root = {};
-
-      var defaultConfig = {
-        api: {
-          testnet: 'testnet.api.coloredcoins.org',
-          livenet: 'api.coloredcoins.org'
-        }
-      };
-
-      root.config = function() {
-        return lodash.defaults(configService.getSync()['coloredCoins'], defaultConfig);
-      };
-
-      return root;
-    });
-
-'use strict';
-
-
-angular.module('copayAddon.coloredCoins')
     .service('ccFeeService', function (profileService, feeService, $log) {
       var root = {};
 
@@ -611,14 +590,9 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     return cb(null, data);
   };
 
-  var apiHost = function(network) {
-    var apiHost = ccConfig.config().api[network];
-    return apiHost.indexOf('http') < 0 ? 'http://' + apiHost : apiHost;
-  };
-
   var getFrom = function (api_endpoint, param, network, cb) {
     $log.debug('Get from:' + api_endpoint + '/' + param);
-    $http.get(apiHost(network) + '/v2/' + api_endpoint + '/' + param)
+    $http.get(ccConfig.api[network] + '/v2/' + api_endpoint + '/' + param)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })
@@ -629,7 +603,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var postTo = function(api_endpoint, json_data, network, cb) {
     $log.debug('Post to:' + api_endpoint + ". Data: " + JSON.stringify(json_data));
-    $http.post(apiHost(network) + '/v2/' + api_endpoint, json_data)
+    $http.post(ccConfig.api[network] + '/v2/' + api_endpoint, json_data)
         .success(function (data, status) {
           return handleResponse(data, status, cb);
         })

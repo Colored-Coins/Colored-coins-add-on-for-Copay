@@ -19,7 +19,8 @@
     Add the following under ``concat.angular.src``:
 
     ````
-    'bower_components/copay-colored-coins-plugin/dist/copayColoredCoins.js'
+    'bower_components/copay-colored-coins-plugin/dist/copayColoredCoins.js',
+    'bower_components/copay-colored-coins-plugin/config.js'
     ````
     
     And under ``concat.foundation.src``:
@@ -27,17 +28,9 @@
     ````
     'bower_components/copay-colored-coins-plugin/css/assets.css'
     ````
-4. Add the following to Copay config (replace ``localhost`` with your host if deploying for public):
-
-    ````
-    coloredCoins: {
-      api: {
-        testnet: 'http://localhost:8000',
-        livenet: 'http://localhost:8100'
-      },
-      uploadHost: 'http://localhost:8200'
-    },
-    ````
+4. If you are installing this addon on public Copay (in other words, not for development purposes), change
+``bower_components/copay-colored-coins-plugin/config.js`` so that it has your copay's host name intead of ``localhost``.
+You need to have ports 8000, 8100, 8200 to be open for incoming connections for that host.
 
 5. Addon uses S3 bucket to store uploaded asset icons. Configuration:
    - [Configure AWS profile](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html). It should have ``PutObject`` permission on you bucket.
