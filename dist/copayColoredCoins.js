@@ -213,9 +213,49 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
     lodash.pull($scope.issuance.userData, field);
   };
 
-  $scope.issueAsset = function (form) {
-    var modalScope = this;
+  var createAsset = function(issuance, iconData) {
+    self.setOngoingProcess(gettext('Creating issuance transaction'));
+    coloredCoins.createIssueTx(issuance, function (err, result) {
+      if (err) {
+        self._handleError(err);
+      }
 
+      var metadata = {
+        asset: {
+          action: 'issue',
+          assetName: issuance.assetName,
+          icon: iconData ? iconData.url : null,
+          amount: issuance.amount
+        }
+      };
+      self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, metadata);
+    });
+  };
+
+  var createAssetWithIcon = function(issuance, icon) {
+    Upload.upload({
+      url: ccConfig.config().uploadHost + '/upload',
+      file: icon
+    }).success(function (iconData, status, headers, config) {
+      if (!iconData.url || iconData.url.indexOf('https://s3') != 0) {
+        console.log('Error uploading: ' + status + ' ' + iconData);
+        return self._handleError({ error: 'Failed to upload icon'});
+      }
+      console.log('Icon uploaded. URL: ' + iconData);
+      issuance.urls = [
+        {
+          name: "icon",
+          url: iconData.url,
+          mimeType: iconData.mimeType
+        }];
+      createAsset(issuance, iconData);
+    }).error(function (data, status, headers, config) {
+      console.log('error uploading icon: ' + status + " " + data);
+      self._handleError({ error: "Failed to upload icon" });
+    })
+  };
+
+  $scope.issueAsset = function (form) {
     if (form.$invalid) {
       this.error = gettext('Unable to send transaction proposal');
       return;
@@ -230,41 +270,11 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
       return;
     }
 
-    Upload.upload({
-      url: ccConfig.config().uploadHost + '/upload',
-      file: this.file
-    }).success(function (iconData, status, headers, config) {
-      if (!iconData.url || iconData.url.indexOf('https://s3') != 0) {
-        console.log('Error uploading: ' + status + ' ' + iconData);
-        return self._handleError({ error: 'Failed to upload icon'});
-      }
-      console.log('Icon uploaded. URL: ' + iconData);
-      modalScope.issuance.urls = [
-        {
-          name: "icon",
-          url: iconData.url,
-          mimeType: iconData.mimeType
-        }];
-      self.setOngoingProcess(gettext('Creating issuance transaction'));
-      coloredCoins.createIssueTx(modalScope.issuance, function (err, result) {
-        if (err) {
-          self._handleError(err);
-        }
-
-        var metadata = {
-          asset: {
-            action: 'issue',
-            assetName: modalScope.issuance.assetName,
-            icon: iconData.url,
-            amount: modalScope.issuance.amount
-          }
-        };
-        self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, metadata);
-      });
-    }).error(function (data, status, headers, config) {
-      console.log('error uploading icon: ' + status + " " + data);
-      self._handleError({ error: data });
-    })
+    if (this.file) {
+      createAssetWithIcon(this.issuance, this.file);
+    } else {
+      createAsset(this.issuance);
+    }
   };
 };
 
@@ -499,8 +509,7 @@ AssetTransferController.prototype = Object.create(ProcessingTxController.prototy
 
 angular.module('copayAddon.coloredCoins')
     .service('ccConfig', function (configService, lodash) {
-      var root = {},
-          configObject;
+      var root = {};
 
       var defaultConfig = {
         api: {
@@ -510,10 +519,7 @@ angular.module('copayAddon.coloredCoins')
       };
 
       root.config = function() {
-        if (!configObject) {
-          configObject = lodash.defaults(configService.getSync()['coloredCoins'], defaultConfig);
-        }
-        return configObject;
+        return lodash.defaults(configService.getSync()['coloredCoins'], defaultConfig);
       };
 
       return root;
@@ -1628,7 +1634,7 @@ angular.module("colored-coins/views/modals/transfer-status.html", []).run(["$tem
 /**!
  * AngularJS file upload/drop directive and service with progress and abort
  * @author  Danial  <danial.farid@gmail.com>
- * @version 6.0.4
+ * @version 6.1.1
  */
 
 if (window.XMLHttpRequest && !(window.FileAPI && FileAPI.shouldLoad)) {
@@ -1649,7 +1655,7 @@ if (window.XMLHttpRequest && !(window.FileAPI && FileAPI.shouldLoad)) {
 
 var ngFileUpload = angular.module('ngFileUpload', []);
 
-ngFileUpload.version = '6.0.4';
+ngFileUpload.version = '6.1.1';
 ngFileUpload.defaults = {};
 
 ngFileUpload.service('Upload', ['$http', '$q', '$timeout', function ($http, $q, $timeout) {
@@ -1886,6 +1892,7 @@ ngFileUpload.service('Upload', ['$http', '$q', '$timeout', function ($http, $q, 
     /** @namespace attr.ngfMultiple */
     /** @namespace attr.ngfCapture */
     /** @namespace attr.ngfAccept */
+    /** @namespace attr.ngfValidate */
     /** @namespace attr.ngfMaxSize */
     /** @namespace attr.ngfMinSize */
     /** @namespace attr.ngfResetOnClick */
@@ -1902,7 +1909,7 @@ ngFileUpload.service('Upload', ['$http', '$q', '$timeout', function ($http, $q, 
     });
 
     var disabled = false;
-    if (getAttr(attr, 'ngfSelect').search(/\W+$files\W+/) === -1) {
+    if (getAttr(attr, 'ngfSelect').search(/\W+\$files\W+/) === -1) {
       scope.$watch(getAttr(attr, 'ngfSelect'), function (val) {
         disabled = val === false;
       });
@@ -2093,6 +2100,11 @@ ngFileUpload.service('Upload', ['$http', '$q', '$timeout', function ($http, $q, 
       return result;
     }
 
+    var custom = $parse(getAttr(attr, 'ngfValidate'))(scope, {$file: file, $event: evt});
+    if (custom != null && (custom === false || custom.length > 0)) {
+      file.$error = custom ? custom : 'validate';
+      return false;
+    }
     var accept = $parse(getAttr(attr, 'ngfAccept'))(scope, {$file: file, $event: evt});
     var fileSizeMax = $parse(getAttr(attr, 'ngfMaxSize'))(scope, {$file: file, $event: evt}) || 9007199254740991;
     var fileSizeMin = $parse(getAttr(attr, 'ngfMinSize'))(scope, {$file: file, $event: evt}) || -1;
@@ -2173,6 +2185,9 @@ ngFileUpload.service('Upload', ['$http', '$q', '$timeout', function ($http, $q, 
       }
     }
 
+    if ((!files || files.length === 0) && (!ngModel.$modelValue || ngModel.$modelValue.length === 0)) {
+      return;
+    }
     if (noDelay) {
       update();
     } else {
@@ -2241,7 +2256,7 @@ ngFileUpload.service('Upload', ['$http', '$q', '$timeout', function ($http, $q, 
     }
 
     var disabled = false;
-    if (getAttr(attr, 'ngfDrop').search(/\W+$files\W+/) === -1) {
+    if (getAttr(attr, 'ngfDrop').search(/\W+\$files\W+/) === -1) {
       scope.$watch(getAttr(attr, 'ngfDrop'), function(val) {
         disabled = val === false;
       });
