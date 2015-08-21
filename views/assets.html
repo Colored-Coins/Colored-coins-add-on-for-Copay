@@ -75,7 +75,7 @@
             <i class="icon-arrow-right3 size-18"></i>
         </div>
     </div>
-    <div class="cc-no-assets" ng-show="assets.assets.length == 0">
+    <div class="cc-no-assets" ng-show="assets.assets && assets.assets.length == 0">
         <h3>You don't have any assets.</h3>
         <div>Click <a ng-click="assets.openIssueModal()">here</a> to issue you first!</div>
         <span class="nb">(This requires some Bitcoins for the miner fee)</span>

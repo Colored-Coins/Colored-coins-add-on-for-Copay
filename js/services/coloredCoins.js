@@ -10,14 +10,18 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   // UTXOs "cache"
   root.txidToUTXO = {};
-  root.assets = [];
+  root.assets = null;
+
+  var disableFocusListener = $rootScope.$on('Local/NewFocusedWallet', function() {
+    root.assets = null;
+  });
 
   var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
-    root.assets = [];
+    root.assets = null;
     var addresses = lodash.pluck(balance.byAddress, 'address');
 
     $rootScope.$emit('Addon/OngoingProcess', 'Getting assets');
-    root.fetchAssets(addresses, function (err, assets) {
+    _fetchAssets(addresses, function (err, assets) {
       if (err) {
         $log.error(err.error || err.message);
       } else {
@@ -30,6 +34,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   $rootScope.$on('$destroy', function() {
     disableBalanceListener();
+    disableFocusListener();
   });
 
   var handleResponse = function (data, status, cb) {
@@ -150,10 +155,10 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     return lodash.map(root.assets, function(asset) { return asset.utxo.txid + ":" + asset.utxo.index; });
   };
 
-  root.fetchAssets = function(addresses, cb) {
-    root.assets = [];
+  var _fetchAssets = function(addresses, cb) {
+    var assets = [];
     if (addresses.length == 0) {
-      return cb(null, root.assets);
+      return cb(null, assets);
     }
     _updateLockedUtxos(function(err) {
       if (err) { return cb(err); }
@@ -163,10 +168,10 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
         _getAssetsForAddress(address, function (err, addressAssets) {
           if (err) { return cb(err); }
 
-          root.assets = root.assets.concat(addressAssets);
+          assets = assets.concat(addressAssets);
 
           if (++checkedAddresses == addresses.length) {
-            return cb(null, root.assets);
+            return cb(null, assets);
           }
         })
       });
