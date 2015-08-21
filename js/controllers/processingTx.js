@@ -114,7 +114,7 @@ ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, to
   outputs[0].toAddress = toAddress;
 
   self.setOngoingProcess(self.gettext('Creating tx proposal'));
-  self.feeService.getCurrentFeeValue(function (err, feePerKb) {
+  self.feeService.getCurrentFeeValue(null, function (err, feePerKb) {
     if (err) self.$log.debug(err);
     fc.sendTxProposal({
       type: 'external',

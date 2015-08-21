@@ -23,7 +23,7 @@ angular.module('copayAddon.coloredCoins')
       };
 
       root.estimateFee = function(nbInputs, nbOutputs, cb) {
-        feeService.getCurrentFeeValue(function(err, feePerKb) {
+        feeService.getCurrentFeeValue(null, function(err, feePerKb) {
           if (err) $log.debug(err);
 
           var size = _getEstimatedSize(nbInputs, nbOutputs);

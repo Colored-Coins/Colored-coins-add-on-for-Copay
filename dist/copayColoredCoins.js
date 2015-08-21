@@ -434,7 +434,7 @@ ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, to
   outputs[0].toAddress = toAddress;
 
   self.setOngoingProcess(self.gettext('Creating tx proposal'));
-  self.feeService.getCurrentFeeValue(function (err, feePerKb) {
+  self.feeService.getCurrentFeeValue(null, function (err, feePerKb) {
     if (err) self.$log.debug(err);
     fc.sendTxProposal({
       type: 'external',
@@ -567,7 +567,7 @@ angular.module('copayAddon.coloredCoins')
       };
 
       root.estimateFee = function(nbInputs, nbOutputs, cb) {
-        feeService.getCurrentFeeValue(function(err, feePerKb) {
+        feeService.getCurrentFeeValue(null, function(err, feePerKb) {
           if (err) $log.debug(err);
 
           var size = _getEstimatedSize(nbInputs, nbOutputs);
