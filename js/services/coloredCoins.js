@@ -16,11 +16,16 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     root.assets = null;
   });
 
+  var _setOngoingProcess = function(name) {
+    $rootScope.$emit('Addon/OngoingProcess', name);
+    root.onGoingProcess = name;
+  };
+
   var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
     root.assets = null;
     var addresses = lodash.pluck(balance.byAddress, 'address');
 
-    $rootScope.$emit('Addon/OngoingProcess', 'Getting assets');
+    _setOngoingProcess('Getting assets');
     _fetchAssets(addresses, function (err, assets) {
       if (err) {
         $log.error(err.error || err.message);
@@ -28,7 +33,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
         root.assets = assets;
         $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
       }
-      $rootScope.$emit('Addon/OngoingProcess', null);
+      _setOngoingProcess();
     });
   });
 

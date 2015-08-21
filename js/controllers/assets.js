@@ -38,6 +38,9 @@ angular.module('copayAddon.coloredCoins')
         }
       };
 
+      // show ongoing process if any
+      this.setOngoingProcess(coloredCoins.onGoingProcess);
+
       var hideModal = function () {
         var m = angular.element(document.getElementsByClassName('reveal-modal'));
         m.addClass('slideOutDown');
