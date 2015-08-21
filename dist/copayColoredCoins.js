@@ -1041,6 +1041,11 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "            <i class=\"icon-arrow-right3 size-18\"></i>\n" +
     "        </div>\n" +
     "    </div>\n" +
+    "    <div class=\"cc-no-assets\" ng-show=\"assets.assets.length == 0\">\n" +
+    "        <h3>You don't have any assets.</h3>\n" +
+    "        <div>Click <a ng-click=\"assets.openIssueModal()\">here</a> to issue you first!</div>\n" +
+    "        <span class=\"nb\">(This requires some Bitcoins for the miner fee)</span>\n" +
+    "    </div>\n" +
     "</div>\n" +
     "<div class=\"extra-margin-bottom\"></div>\n" +
     "<div ng-include=\"'views/includes/menu.html'\" ng-show=\"!index.noFocusedWallet\"></div>\n" +
