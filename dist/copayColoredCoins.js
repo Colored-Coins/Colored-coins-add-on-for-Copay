@@ -969,7 +969,7 @@ angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'c
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
-    "<div class=\"scroll\" ng-controller=\"assetsController as assets\">\n" +
+    "<div class=\"oh\" ng-controller=\"assetsController as assets\">\n" +
     "    <div class=\"onGoingProcess\" ng-show=\"index.isOffline\">\n" +
     "        <div class=\"onGoingProcess-content\" ng-style=\"{'background-color':'#222'}\">\n" +
     "            <div class=\"spinner\">\n" +
@@ -1018,32 +1018,34 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "    </div>\n" +
     "\n" +
     "    <div class=\"topbar-container\" ng-include=\"'colored-coins/views/includes/topbar.html'\"></div>\n" +
-    "    <div ng-repeat=\"asset in assets.assets | orderBy:['assetName', 'utxo.txid']\" ng-click=\"assets.openAssetModal(asset)\"\n" +
-    "         class=\"row collapse assets-list\">\n" +
-    "        <div class=\"small-1 columns text-center\">\n" +
-    "            <img ng-src=\"{{ asset.icon }}\" class=\"asset-icon icon\" ng-show=\"asset.icon\"/>\n" +
-    "            <img class=\"asset-icon icon cc-default-icon\" ng-hide=\"asset.icon\"/>\n" +
-    "            &nbsp;\n" +
-    "        </div>\n" +
-    "        <div class=\"small-4 columns\">\n" +
-    "            <div ng-if=\"!$root.updatingBalance\">\n" +
-    "                <span class=\"text-bold size-16\">{{ asset.metadata.assetName }}</span>\n" +
+    "    <div class=\"cc-assets-list\" ng-show=\"assets.assets\">\n" +
+    "        <div ng-repeat=\"asset in assets.assets | orderBy:['assetName', 'utxo.txid']\" ng-click=\"assets.openAssetModal(asset)\"\n" +
+    "             class=\"row collapse cc-assets-list-item\">\n" +
+    "            <div class=\"small-1 columns text-center\">\n" +
+    "                <img ng-src=\"{{ asset.icon }}\" class=\"asset-icon icon\" ng-show=\"asset.icon\"/>\n" +
+    "                <img class=\"asset-icon icon cc-default-icon\" ng-hide=\"asset.icon\"/>\n" +
+    "                &nbsp;\n" +
     "            </div>\n" +
-    "            <div class=\"ellipsis text-gray size-14\">\n" +
-    "                {{ asset.metadata.description }}\n" +
+    "            <div class=\"small-4 columns\">\n" +
+    "                <div ng-if=\"!$root.updatingBalance\">\n" +
+    "                    <span class=\"text-bold size-16\">{{ asset.metadata.assetName }}</span>\n" +
+    "                </div>\n" +
+    "                <div class=\"ellipsis text-gray size-14\">\n" +
+    "                    {{ asset.metadata.description }}\n" +
+    "                </div>\n" +
     "            </div>\n" +
-    "        </div>\n" +
-    "        <div class=\"small-2 columns\">\n" +
-    "          <span class=\"size-16\">\n" +
-    "            {{ asset.asset.amount }} unit{{ asset.asset.amount != 1 ? 's' : '' }}\n" +
-    "            <i class=\"fi-lock\" ng-show=\"asset.locked\"></i>\n" +
-    "          </span>\n" +
-    "        </div>\n" +
-    "        <div class=\"small-4 columns\">\n" +
-    "            <span class=\"size-14\"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>\n" +
-    "        </div>\n" +
-    "        <div class=\"small-1 columns text-right\">\n" +
-    "            <i class=\"icon-arrow-right3 size-18\"></i>\n" +
+    "            <div class=\"small-2 columns\">\n" +
+    "              <span class=\"size-16\">\n" +
+    "                {{ asset.asset.amount }} unit{{ asset.asset.amount != 1 ? 's' : '' }}\n" +
+    "                <i class=\"fi-lock\" ng-show=\"asset.locked\"></i>\n" +
+    "              </span>\n" +
+    "            </div>\n" +
+    "            <div class=\"small-4 columns\">\n" +
+    "                <span class=\"size-14\"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>\n" +
+    "            </div>\n" +
+    "            <div class=\"small-1 columns text-right\">\n" +
+    "                <i class=\"icon-arrow-right3 size-18\"></i>\n" +
+    "            </div>\n" +
     "        </div>\n" +
     "    </div>\n" +
     "    <div class=\"cc-no-assets\" ng-show=\"assets.assets && assets.assets.length == 0\">\n" +

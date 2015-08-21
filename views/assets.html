@@ -1,4 +1,4 @@
-<div class="scroll" ng-controller="assetsController as assets">
+<div class="oh" ng-controller="assetsController as assets">
     <div class="onGoingProcess" ng-show="index.isOffline">
         <div class="onGoingProcess-content" ng-style="{'background-color':'#222'}">
             <div class="spinner">
@@ -47,32 +47,34 @@
     </div>
 
     <div class="topbar-container" ng-include="'colored-coins/views/includes/topbar.html'"></div>
-    <div ng-repeat="asset in assets.assets | orderBy:['assetName', 'utxo.txid']" ng-click="assets.openAssetModal(asset)"
-         class="row collapse assets-list">
-        <div class="small-1 columns text-center">
-            <img ng-src="{{ asset.icon }}" class="asset-icon icon" ng-show="asset.icon"/>
-            <img class="asset-icon icon cc-default-icon" ng-hide="asset.icon"/>
-            &nbsp;
-        </div>
-        <div class="small-4 columns">
-            <div ng-if="!$root.updatingBalance">
-                <span class="text-bold size-16">{{ asset.metadata.assetName }}</span>
+    <div class="cc-assets-list" ng-show="assets.assets">
+        <div ng-repeat="asset in assets.assets | orderBy:['assetName', 'utxo.txid']" ng-click="assets.openAssetModal(asset)"
+             class="row collapse cc-assets-list-item">
+            <div class="small-1 columns text-center">
+                <img ng-src="{{ asset.icon }}" class="asset-icon icon" ng-show="asset.icon"/>
+                <img class="asset-icon icon cc-default-icon" ng-hide="asset.icon"/>
+                &nbsp;
             </div>
-            <div class="ellipsis text-gray size-14">
-                {{ asset.metadata.description }}
+            <div class="small-4 columns">
+                <div ng-if="!$root.updatingBalance">
+                    <span class="text-bold size-16">{{ asset.metadata.assetName }}</span>
+                </div>
+                <div class="ellipsis text-gray size-14">
+                    {{ asset.metadata.description }}
+                </div>
             </div>
-        </div>
-        <div class="small-2 columns">
-          <span class="size-16">
-            {{ asset.asset.amount }} unit{{ asset.asset.amount != 1 ? 's' : '' }}
-            <i class="fi-lock" ng-show="asset.locked"></i>
-          </span>
-        </div>
-        <div class="small-4 columns">
-            <span class="size-14"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>
-        </div>
-        <div class="small-1 columns text-right">
-            <i class="icon-arrow-right3 size-18"></i>
+            <div class="small-2 columns">
+              <span class="size-16">
+                {{ asset.asset.amount }} unit{{ asset.asset.amount != 1 ? 's' : '' }}
+                <i class="fi-lock" ng-show="asset.locked"></i>
+              </span>
+            </div>
+            <div class="small-4 columns">
+                <span class="size-14"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>
+            </div>
+            <div class="small-1 columns text-right">
+                <i class="icon-arrow-right3 size-18"></i>
+            </div>
         </div>
     </div>
     <div class="cc-no-assets" ng-show="assets.assets && assets.assets.length == 0">
