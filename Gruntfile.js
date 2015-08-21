@@ -14,6 +14,7 @@ module.exports = function (grunt) {
       dist: {
         src: [
           './js/copayColoredCoins.js',
+          './js/overrides/*.js',
           './js/controllers/*.js',
           './js/filters/*.js',
           './js/services/*.js',
