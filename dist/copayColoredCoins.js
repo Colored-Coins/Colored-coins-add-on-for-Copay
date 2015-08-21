@@ -1181,7 +1181,7 @@ angular.module("colored-coins/views/landing.html", []).run(["$templateCache", fu
     "<div class=\"text-center cc-landing\" ng-if=\"!index.hasProfile\">\n" +
     "    <div class=\"row\">\n" +
     "        <div class=\"medium-6 large-4 medium-centered small-centered large-centered columns m20t\">\n" +
-    "            <div class=\"cc-logo\"></div>\n" +
+    "            <logo negative=\"true\"></logo>\n" +
     "            <div class=\"p20\">\n" +
     "                <span class=\"text-bold size-16 text-white\" translate>WELCOME TO COLORED COPAY</span>\n" +
     "                <p class=\"text-gray size-14 m0 text-light\" translate>A multisignature bitcoin wallet with colored coins support</p>\n" +
