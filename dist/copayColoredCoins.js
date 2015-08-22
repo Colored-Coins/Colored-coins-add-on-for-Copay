@@ -1251,7 +1251,7 @@ angular.module("colored-coins/views/modals/asset-details.html", []).run(["$templ
     "    </section>\n" +
     "</nav>\n" +
     "\n" +
-    "<div class=\"modal-content\">\n" +
+    "<div class=\"modal-content fix-modals-touch\">\n" +
     "    <div ng-show=\"asset.locked\">\n" +
     "        <h4 class=\"title m0\">\n" +
     "            <div class=\"asset-alert\">\n" +
@@ -1417,7 +1417,7 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "    </section>\n" +
     "</nav>\n" +
     "\n" +
-    "<div class=\"modal-content\">\n" +
+    "<div class=\"modal-content fix-modals-touch\">\n" +
     "    <div class=\"row m20t\">\n" +
     "        <div class=\"large-12 large-centered columns\">\n" +
     "            <form name=\"assetIssueForm\" ng-submit=\"issueAsset(assetIssueForm)\" ng-disabled=\"home.blockUx || home.onGoingProcess\" novalidate>\n" +
@@ -1560,7 +1560,7 @@ angular.module("colored-coins/views/modals/send.html", []).run(["$templateCache"
     "    </section>\n" +
     "</nav>\n" +
     "\n" +
-    "<div class=\"modal-content\">\n" +
+    "<div class=\"modal-content fix-modals-touch\">\n" +
     "    <div class=\"header-modal text-center\">\n" +
     "        <div class=\"size-42\">\n" +
     "            {{ asset.metadata.assetName }}\n" +
