@@ -187,3 +187,11 @@
 .cc-no-assets .nb {
     font-size: 0.8em;
 }
+
+/* ios safari */
+@media screen and (max-device-width: 480px) {
+    .extra-margin-bottom {
+        display: block;
+        height: 75px;
+    }
+}
