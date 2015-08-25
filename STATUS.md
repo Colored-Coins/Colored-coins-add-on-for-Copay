@@ -15,3 +15,4 @@
 
 ### bitcore-wallet-client
 - Fix verification for txp with outputs [#97](https://github.com/bitpay/bitcore-wallet-client/pull/97). Check if #90 resolves our issue
+- https://github.com/troggy/bitcore-wallet-client/tree/txp/send-inputs
