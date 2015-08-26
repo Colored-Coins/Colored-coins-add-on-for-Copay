@@ -60,7 +60,7 @@ angular.module('copayAddon.coloredCoins')
       };
 
       this.openAssetModal = function (asset) {
-        var ModalInstanceCtrl = function ($rootScope, $scope, $modalInstance, insight) {
+        var ModalInstanceCtrl = function ($rootScope, $scope, $modalInstance, insight, profileService) {
           $scope.asset = asset;
           insight = insight.get();
           insight.getTransaction(asset.issuanceTxid, function (err, tx) {
@@ -71,7 +71,9 @@ angular.module('copayAddon.coloredCoins')
           $scope.openTransferModal = self.openTransferModal;
 
           $scope.openBlockExplorer = function (asset) {
-            $rootScope.openExternalLink(insight.url + '/tx/' + asset.issuanceTxid)
+            var url = 'http://coloredcoins.org/explorer/';
+            var networkSuffix = profileService.focusedClient.credentials.network == 'testnet' ? 'testnet/' : '';
+            $rootScope.openExternalLink(url + networkSuffix + 'tx/' + asset.issuanceTxid);
           };
 
           $scope.cancel = function () {

@@ -186,7 +186,7 @@ angular.module('copayAddon.coloredCoins')
       };
 
       this.openAssetModal = function (asset) {
-        var ModalInstanceCtrl = function ($rootScope, $scope, $modalInstance, insight) {
+        var ModalInstanceCtrl = function ($rootScope, $scope, $modalInstance, insight, profileService) {
           $scope.asset = asset;
           insight = insight.get();
           insight.getTransaction(asset.issuanceTxid, function (err, tx) {
@@ -197,7 +197,9 @@ angular.module('copayAddon.coloredCoins')
           $scope.openTransferModal = self.openTransferModal;
 
           $scope.openBlockExplorer = function (asset) {
-            $rootScope.openExternalLink(insight.url + '/tx/' + asset.issuanceTxid)
+            var url = 'http://coloredcoins.org/explorer/';
+            var networkSuffix = profileService.focusedClient.credentials.network == 'testnet' ? 'testnet/' : '';
+            $rootScope.openExternalLink(url + networkSuffix + 'tx/' + asset.issuanceTxid);
           };
 
           $scope.cancel = function () {
@@ -691,7 +693,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var _updateLockedUtxos = function(cb) {
     var fc = profileService.focusedClient;
-    fc.getUtxos(function(err, utxos) {
+    fc.getUtxos({}, function(err, utxos) {
       if (err) { return cb(err); }
       _setLockedUtxos(utxos);
       cb();
@@ -706,7 +708,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
   };
 
   var selectFinanceOutput = function(financeAmount, fc, cb) {
-    fc.getUtxos(function(err, utxos) {
+    fc.getUtxos({}, function(err, utxos) {
       if (err) { return cb(err); }
 
       _setLockedUtxos(utxos);
