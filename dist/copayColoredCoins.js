@@ -72,9 +72,9 @@ module
           }
         },
         formatPendingTxp: function(txp) {
-          if (txp.metadata && txp.metadata.asset) {
+          if (txp.customData && txp.customData.asset) {
             var value = txp.amountStr;
-            var asset = txp.metadata.asset;
+            var asset = txp.customData.asset;
             txp.amountStr = asset.amount + " unit" + (asset.amount > 1 ? "s" : "") + " of " + asset.assetName + " (" + value + ")";
             txp.showSingle = true;
             txp.toAddress = txp.outputs[0].toAddress; // txproposal
@@ -260,7 +260,7 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
         self._handleError(err);
       }
 
-      var metadata = {
+      var customData = {
         asset: {
           action: 'issue',
           assetName: issuance.assetName,
@@ -268,7 +268,7 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
           amount: issuance.amount
         }
       };
-      self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, metadata);
+      self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, customData);
     });
   };
 
@@ -410,7 +410,7 @@ ProcessingTxController.prototype._signAndBroadcast = function (txp, cb) {
   });
 };
 
-ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, toAddress, metadata) {
+ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, toAddress, customData) {
   var self = this;
   var fc = self.profileService.focusedClient;
   var tx = new self.bitcore.Transaction(txHex);
@@ -446,7 +446,7 @@ ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, to
       message: '',
       payProUrl: null,
       feePerKb: feePerKb,
-      metadata: metadata
+      customData: customData
     }, function (err, txp) {
       if (err) {
         return self._handleError(err);
@@ -527,7 +527,7 @@ var AssetTransferController = function ($rootScope, $scope, $modalInstance, $tim
         self._handleError(err);
       }
 
-      var metadata = {
+      var customData = {
         asset: {
           action: 'transfer',
           assetId: $scope.asset.asset.assetId,
@@ -537,7 +537,7 @@ var AssetTransferController = function ($rootScope, $scope, $modalInstance, $tim
           amount: transfer._amount
         }
       };
-      self._createAndExecuteProposal(result.txHex, transfer._address, metadata);
+      self._createAndExecuteProposal(result.txHex, transfer._address, customData);
     });
   };
 };
@@ -1147,7 +1147,7 @@ angular.module("colored-coins/views/includes/transaction.html", []).run(["$templ
     "<div class=\"ng-animate-disabled row collapse last-transactions-content line-b\"\n" +
     "     ng-class=\"{'text-gray':!tx.pendingForUs}\"\n" +
     "     ng-click=\"home.openTxpModal(tx, index.copayers)\"\n" +
-    "     ng-init=\"isIssuance = tx.metadata.asset.action == 'issue'\">\n" +
+    "     ng-init=\"isIssuance = tx.customData.asset.action == 'issue'\">\n" +
     "    <div class=\"small-1 columns text-center\" >\n" +
     "        <i class=\"icon-circle-active size-10\" ng-show=\"tx.pendingForUs\" ng-style=\"{'color':index.backgroundColor}\" style=\"margin-top:8px;\"></i>\n" +
     "        &nbsp;\n" +

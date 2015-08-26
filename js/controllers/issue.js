@@ -32,7 +32,7 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
         self._handleError(err);
       }
 
-      var metadata = {
+      var customData = {
         asset: {
           action: 'issue',
           assetName: issuance.assetName,
@@ -40,7 +40,7 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
           amount: issuance.amount
         }
       };
-      self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, metadata);
+      self._createAndExecuteProposal(result.txHex, result.issuanceUtxo.address, customData);
     });
   };
 

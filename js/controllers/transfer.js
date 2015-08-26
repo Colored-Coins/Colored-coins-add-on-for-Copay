@@ -53,7 +53,7 @@ var AssetTransferController = function ($rootScope, $scope, $modalInstance, $tim
         self._handleError(err);
       }
 
-      var metadata = {
+      var customData = {
         asset: {
           action: 'transfer',
           assetId: $scope.asset.asset.assetId,
@@ -63,7 +63,7 @@ var AssetTransferController = function ($rootScope, $scope, $modalInstance, $tim
           amount: transfer._amount
         }
       };
-      self._createAndExecuteProposal(result.txHex, transfer._address, metadata);
+      self._createAndExecuteProposal(result.txHex, transfer._address, customData);
     });
   };
 };

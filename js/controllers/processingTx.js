@@ -88,7 +88,7 @@ ProcessingTxController.prototype._signAndBroadcast = function (txp, cb) {
   });
 };
 
-ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, toAddress, metadata) {
+ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, toAddress, customData) {
   var self = this;
   var fc = self.profileService.focusedClient;
   var tx = new self.bitcore.Transaction(txHex);
@@ -124,7 +124,7 @@ ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, to
       message: '',
       payProUrl: null,
       feePerKb: feePerKb,
-      metadata: metadata
+      customData: customData
     }, function (err, txp) {
       if (err) {
         return self._handleError(err);
