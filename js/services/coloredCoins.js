@@ -105,7 +105,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var _updateLockedUtxos = function(cb) {
     var fc = profileService.focusedClient;
-    fc.getUtxos(function(err, utxos) {
+    fc.getUtxos({}, function(err, utxos) {
       if (err) { return cb(err); }
       _setLockedUtxos(utxos);
       cb();
@@ -120,7 +120,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
   };
 
   var selectFinanceOutput = function(financeAmount, fc, cb) {
-    fc.getUtxos(function(err, utxos) {
+    fc.getUtxos({}, function(err, utxos) {
       if (err) { return cb(err); }
 
       _setLockedUtxos(utxos);
