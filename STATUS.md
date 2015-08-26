@@ -12,6 +12,7 @@
  
 ### bitcore-wallet-utils
  - Fix buildTx for MULTIPLEOUTPUTS proposal without change [#28](https://github.com/bitpay/bitcore-wallet-utils/pull/28)
+ - Allow both toAddress and script for same output [#34](https://github.com/bitpay/bitcore-wallet-utils/pull/34)
 
 ### bitcore-wallet-client
 - Fix verification for txp with outputs [#97](https://github.com/bitpay/bitcore-wallet-client/pull/97). Check if #90 resolves our issue
