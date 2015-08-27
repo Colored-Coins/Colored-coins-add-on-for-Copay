@@ -6,8 +6,7 @@
 - Add QR scanner directive [#3027](https://github.com/bitpay/copay/pull/3027)
 
 ### bitcore-wallet-service
- - Allow to exclude certain UTXO from coin selection [#315](https://github.com/bitpay/bitcore-wallet-service/pull/315)
- - Add EXTERNAL proposal type [#330](https://github.com/bitpay/bitcore-wallet-service/pull/330)
+  - Add EXTERNAL proposal type [#330](https://github.com/bitpay/bitcore-wallet-service/pull/330)
  - Allow arbitrary metadata for tx proposals [#331](https://github.com/bitpay/bitcore-wallet-service/pull/331)
  
 ### bitcore-wallet-utils
