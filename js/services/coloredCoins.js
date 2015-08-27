@@ -1,9 +1,6 @@
 'use strict';
 
 function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcore, $http, $log, lodash) {
-  var SATOSHIS_FOR_ISSUANCE_COLORING = 1300;
-  var SATOSHIS_FOR_TRANSFER_COLORING = 600;
-
   var root = {},
       lockedUtxos = [],
       self = this;
@@ -247,12 +244,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
       });
     }
 
-    var nInputs = 2; // asset address + finance utxo
-    var nOutputs = to.length == 2 ? 3 : 2; // outputs for transfer coloring scheme
-
-    ccFeeService.estimateFee(nInputs, nOutputs, function(err, fee) {
-      // We need extra satoshis if we have change transfer
-      var financeAmount = fee + SATOSHIS_FOR_TRANSFER_COLORING * (to.length - 1);
+    ccFeeService.estimateCostOfTransfer(amount, asset.asset.amount, function(err, fee, financeAmount) {
       $log.debug("Funds required for transfer: " + financeAmount);
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
@@ -283,13 +275,10 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   root.createIssueTx = function(issuance, cb) {
 
-    var nInputs = 1; // issuing address
-    var nOutputs = 3; // outputs for issuance coloring scheme
-
-    ccFeeService.estimateFee(nInputs, nOutputs, function(err, fee) {
-      var fc = profileService.focusedClient;
-      var financeAmount = fee + SATOSHIS_FOR_ISSUANCE_COLORING;
+    ccFeeService.estimateCostOfIssuance(function(err, fee, financeAmount) {
       $log.debug("Funds required for issuance: " + financeAmount);
+
+      var fc = profileService.focusedClient;
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
         if (err) { return cb(err); }

@@ -549,7 +549,9 @@ AssetTransferController.prototype = Object.create(ProcessingTxController.prototy
 
 angular.module('copayAddon.coloredCoins')
     .service('ccFeeService', function (profileService, feeService, $log) {
-      var root = {};
+      var SATOSHIS_FOR_ISSUANCE_COLORING = 1300,
+          SATOSHIS_FOR_TRANSFER_COLORING = 600,
+          root = {};
 
       // from BWS TxProposal.prototype.getEstimatedSize
       var _getEstimatedSize = function(nbInputs, nbOutputs) {
@@ -575,11 +577,34 @@ angular.module('copayAddon.coloredCoins')
           var size = _getEstimatedSize(nbInputs, nbOutputs);
           $log.debug("Estimated size: " + size);
           var fee = feePerKb * size / 1000;
+          fee = parseInt(fee.toFixed(0));
+          $log.debug("Estimated fee: " + fee);
+          return cb(null, fee);
+        });
+      };
 
-          // Round up to nearest bit
-          var result = parseInt((Math.ceil(fee / 100) * 100).toFixed(0));
-          $log.debug("Estimated fee: " + result);
-          return cb(null, result);
+      root.estimateCostOfIssuance = function(cb) {
+        var nInputs = 1; // issuing address
+        var nOutputs = 3; // outputs for issuance coloring scheme
+
+        root.estimateFee(nInputs, nOutputs, function(err, fee) {
+          var amount = fee + SATOSHIS_FOR_ISSUANCE_COLORING;
+          return cb(err, fee, amount);
+        });
+      };
+
+      root.estimateCostOfTransfer = function(transferUnits, totalUnits, cb) {
+        var hasChange = transferUnits < totalUnits;
+
+        var nInputs = 2; // asset address + finance utxo
+        // 2 outputs if spending without change: colored UTXO + OP_RETURN
+        // 3 outputs if spending with change: colored UTXO + OP_RETURN + colored UTXO with change
+        var nOutputs = hasChange ? 3 : 2;
+
+        root.estimateFee(nInputs, nOutputs, function(err, fee) {
+          // We need extra satoshis if we have change transfer, these will go to change UTXO
+          var amount = hasChange ? fee + SATOSHIS_FOR_TRANSFER_COLORING : fee;
+          return cb(err, fee, amount);
         });
       };
 
@@ -589,9 +614,6 @@ angular.module('copayAddon.coloredCoins')
 'use strict';
 
 function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcore, $http, $log, lodash) {
-  var SATOSHIS_FOR_ISSUANCE_COLORING = 1300;
-  var SATOSHIS_FOR_TRANSFER_COLORING = 600;
-
   var root = {},
       lockedUtxos = [],
       self = this;
@@ -835,12 +857,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
       });
     }
 
-    var nInputs = 2; // asset address + finance utxo
-    var nOutputs = to.length == 2 ? 3 : 2; // outputs for transfer coloring scheme
-
-    ccFeeService.estimateFee(nInputs, nOutputs, function(err, fee) {
-      // We need extra satoshis if we have change transfer
-      var financeAmount = fee + SATOSHIS_FOR_TRANSFER_COLORING * (to.length - 1);
+    ccFeeService.estimateCostOfTransfer(amount, asset.asset.amount, function(err, fee, financeAmount) {
       $log.debug("Funds required for transfer: " + financeAmount);
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
@@ -871,13 +888,10 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   root.createIssueTx = function(issuance, cb) {
 
-    var nInputs = 1; // issuing address
-    var nOutputs = 3; // outputs for issuance coloring scheme
-
-    ccFeeService.estimateFee(nInputs, nOutputs, function(err, fee) {
-      var fc = profileService.focusedClient;
-      var financeAmount = fee + SATOSHIS_FOR_ISSUANCE_COLORING;
+    ccFeeService.estimateCostOfIssuance(function(err, fee, financeAmount) {
       $log.debug("Funds required for issuance: " + financeAmount);
+
+      var fc = profileService.focusedClient;
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
         if (err) { return cb(err); }
