@@ -1,6 +1,6 @@
 {
   "name": "copay-colored-coins-plugin",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Copay addon with support for Colored Coins",
   "main": "js/copayColoredCoins.js",
   "scripts": {
