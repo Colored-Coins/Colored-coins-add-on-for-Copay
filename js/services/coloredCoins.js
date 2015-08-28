@@ -245,7 +245,6 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     }
 
     ccFeeService.estimateCostOfTransfer(amount, asset.asset.amount, function(err, fee, financeAmount) {
-      $log.debug("Funds required for transfer: " + financeAmount);
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
         if (err) { return cb(err); }
@@ -276,8 +275,6 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
   root.createIssueTx = function(issuance, cb) {
 
     ccFeeService.estimateCostOfIssuance(function(err, fee, financeAmount) {
-      $log.debug("Funds required for issuance: " + financeAmount);
-
       var fc = profileService.focusedClient;
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {

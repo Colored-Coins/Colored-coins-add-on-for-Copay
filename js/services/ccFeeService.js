@@ -43,6 +43,7 @@ angular.module('copayAddon.coloredCoins')
 
         root.estimateFee(nInputs, nOutputs, function(err, fee) {
           var amount = fee + SATOSHIS_FOR_ISSUANCE_COLORING;
+          $log.debug("Estimated cost of issuance: " + amount);
           return cb(err, fee, amount);
         });
       };
@@ -58,6 +59,7 @@ angular.module('copayAddon.coloredCoins')
         root.estimateFee(nInputs, nOutputs, function(err, fee) {
           // We need extra satoshis if we have change transfer, these will go to change UTXO
           var amount = hasChange ? fee + SATOSHIS_FOR_TRANSFER_COLORING : fee;
+          $log.debug("Estimated cost of transfer: " + amount);
           return cb(err, fee, amount);
         });
       };

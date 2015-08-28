@@ -1,7 +1,7 @@
 'use strict';
 
 var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                     profileService, feeService, lodash, bitcore, txStatus, ccConfig, Upload) {
+                                     profileService, feeService, lodash, bitcore, txStatus, ccConfig, Upload, ccFeeService, configService) {
 
   ProcessingTxController.call(this, $rootScope, $scope, $timeout, $log, coloredCoins, gettext, profileService, feeService,
       lodash, bitcore, txStatus, $modalInstance);
@@ -12,10 +12,20 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
     userData: []
   };
 
+  $scope.estimatedCost = '...';
 
   this.txStatusOpts = {
     templateUrl: 'colored-coins/views/modals/issue-status.html'
   };
+
+  ccFeeService.estimateCostOfIssuance(function(err, fee, totalCost) {
+    if (err) {
+      return self._handleError(err);
+    }
+    var config = configService.getSync().wallet.settings;
+    $scope.estimatedCost = profileService.formatAmount(totalCost) + ' ' + config.unitName;
+    $scope.$digest();
+  });
 
   $scope.addField = function() {
     $scope.issuance.userData.push({ name: '', value: ''});
