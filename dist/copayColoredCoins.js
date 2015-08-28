@@ -229,7 +229,7 @@ angular.module('copayAddon.coloredCoins')
 'use strict';
 
 var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeout, $log, coloredCoins, gettext,
-                                     profileService, feeService, lodash, bitcore, txStatus, ccConfig, Upload) {
+                                     profileService, feeService, lodash, bitcore, txStatus, ccConfig, Upload, ccFeeService, configService) {
 
   ProcessingTxController.call(this, $rootScope, $scope, $timeout, $log, coloredCoins, gettext, profileService, feeService,
       lodash, bitcore, txStatus, $modalInstance);
@@ -240,10 +240,20 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
     userData: []
   };
 
+  $scope.estimatedCost = '...';
 
   this.txStatusOpts = {
     templateUrl: 'colored-coins/views/modals/issue-status.html'
   };
+
+  ccFeeService.estimateCostOfIssuance(function(err, fee, totalCost) {
+    if (err) {
+      return self._handleError(err);
+    }
+    var config = configService.getSync().wallet.settings;
+    $scope.estimatedCost = profileService.formatAmount(totalCost) + ' ' + config.unitName;
+    $scope.$digest();
+  });
 
   $scope.addField = function() {
     $scope.issuance.userData.push({ name: '', value: ''});
@@ -589,6 +599,7 @@ angular.module('copayAddon.coloredCoins')
 
         root.estimateFee(nInputs, nOutputs, function(err, fee) {
           var amount = fee + SATOSHIS_FOR_ISSUANCE_COLORING;
+          $log.debug("Estimated cost of issuance: " + amount);
           return cb(err, fee, amount);
         });
       };
@@ -604,6 +615,7 @@ angular.module('copayAddon.coloredCoins')
         root.estimateFee(nInputs, nOutputs, function(err, fee) {
           // We need extra satoshis if we have change transfer, these will go to change UTXO
           var amount = hasChange ? fee + SATOSHIS_FOR_TRANSFER_COLORING : fee;
+          $log.debug("Estimated cost of transfer: " + amount);
           return cb(err, fee, amount);
         });
       };
@@ -858,7 +870,6 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     }
 
     ccFeeService.estimateCostOfTransfer(amount, asset.asset.amount, function(err, fee, financeAmount) {
-      $log.debug("Funds required for transfer: " + financeAmount);
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
         if (err) { return cb(err); }
@@ -889,8 +900,6 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
   root.createIssueTx = function(issuance, cb) {
 
     ccFeeService.estimateCostOfIssuance(function(err, fee, financeAmount) {
-      $log.debug("Funds required for issuance: " + financeAmount);
-
       var fc = profileService.focusedClient;
 
       selectFinanceOutput(financeAmount, fc, function(err, financeUtxo) {
@@ -1542,6 +1551,10 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "                <div class=\"row\" ng-show=\"!home.onGoingProcess\">\n" +
     "                    <div class=\"columns\"\n" +
     "                         ng-class=\"{'small-6 medium-6 large-6':(home.lockAddress || home.lockAmount)}\">\n" +
+    "                        <div class=\"size-12 text-center text-gray\">\n" +
+    "                            <span translate>Estimated cost (including network fee): </span>\n" +
+    "                            <span class=\"text-bold\">{{ estimatedCost }}</span>\n" +
+    "                        </div>\n" +
     "                        <button type=\"submit\" class=\"button black round expand\"\n" +
     "                                ng-disabled=\"assetIssueForm.$invalid || home.blockUx ||  index.isOffline\"\n" +
     "                                ng-style=\"{'background-color':index.backgroundColor}\" translate>\n" +
