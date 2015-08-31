@@ -1,5 +1,12 @@
-<div class="text-center cc-landing" ng-if="!index.hasProfile">
-    <div class="row">
+<div
+        ng-if="agreed && index.hasProfile"
+        class="topbar-container"
+        ng-include="'colored-coins/views/includes/topbar.html'"
+        ng-init="titleSection='Terms of Use';  goBackToState = 'about'; noColor = true; noControls = true">
+</div>
+
+<div ng-class="{ 'cc-landing': !agreed }">
+    <div class="row" ng-show="!agreed">
         <div class="medium-6 large-4 medium-centered small-centered large-centered columns m20t">
             <logo negative="true"></logo>
             <div class="p20">
@@ -23,9 +30,14 @@
             <span translate>Creating Profile...</span>
         </div>
     </div>
-    <div class="gif-splash">
-        <span class="text-bold text-gray" translate>Terms of Use</span>
-        <div class="enable_text_select text-light text-left size-14 text-black cc-disclaimer">
+    <div ng-class="{ 'disclaimer':!index.hasProfile, 'content': agreed }">
+        <span class="text-bold text-gray" ng-show="!agreed" translate>Terms of Use</span>
+        <h4 class="title m0" ng-show="agreed && !index.hasProfile">
+            <span translate>Terms of Use</span>
+            <logo class="right" width="40" inline="true"></logo>
+        </h4>
+        <div class="p10 m10 enable_text_select text-light text-left cc-disclaimer"
+             ng-class="{ 'text-gray': agreed, 'text-black': !agreed }">
             <p>The Copay Colored Coins wallet is meant for testing purposes and provided AS-IS.</p>
 
             <p>USE AT YOUR OWN RISK.</p>
@@ -34,11 +46,14 @@
 
             <p><b>Liability:</b> For no case and for no reason shall Colored Coins be held liable for any damage, direct or indirect, consequential, exemplary, physical or special, to You, any User or any 3rd party due to its misperformance of duties herein. Colored Coins provides the Software on an AS-IS basis and shall not be held liable, to the extent permitted by law, by any case of misconduct, negligence, gross negligence, malice or any other mean, to any damages or loss of property, including damages to: virtual property, reputation and business reputation, user account information including login information, loss of profit, loss of good name, all resulting from the use or inability to use Software rendered by Colored Coins.</p>
         </div>
-        <div class="columns start-button m10t" ng-show="!creatingProfile">
+        <div class="columns start-button m10t" ng-show="!creatingProfile && !agreed">
             <p class="text-light text-gray" translate>I affirm that I have read, understood, and agree with these terms.</p>
             <button ng-click="agreeAndCreate()" class="button black expand round size-12 text-spacing" translate> OPEN WALLET </button>
             <p class="text-gray m5b size-12" translate>Already have a wallet?</p>
             <button  ng-click="agreeAndCreate(true)" class="button round outline dark-gray tiny" translate>Import backup </button>
         </div>
+        <button ng-show="agreed && !index.hasProfile" class="round expand" ng-click="goHome()" translate>
+            Go back
+        </button>
     </div>
 </div>

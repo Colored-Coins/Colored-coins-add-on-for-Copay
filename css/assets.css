@@ -110,6 +110,7 @@
     background-image: -webkit-linear-gradient(#3D5672 0%, #223243 100%);
     background-image: -o-linear-gradient(#3D5672 0%, #223243 100%);
     background-image: linear-gradient(#3D5672 0%, #223243 100%);
+    text-align: center;
 }
 
 .cc-landing .start-button button.black {
@@ -121,13 +122,23 @@
 }
 
 .cc-disclaimer {
-    margin: 0 3%;
-    padding: 2%;
     background-color: #ffffff;
 }
 
-.cc-logo-holder {
+.cc-disclaimer p {
+    font-size: 14px;
+}
 
+.cc-logo-holder {
+    text-align: center;
+}
+
+.cc-logo-holder.inline div {
+    display: inline-block;
+}
+
+.cc-logo-holder.inline .cc-plus {
+    visibility: hidden;
 }
 
 .cc-logo-holder.negative {

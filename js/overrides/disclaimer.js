@@ -12,12 +12,17 @@ angular.module('copayAddon.coloredCoins').config(function ($stateProvider) {
     // replace both default 'splash' and 'disclaimer' states with a single one
     if (state.name == 'splash' || state.name == 'disclaimer') {
       views['main@'].templateUrl = 'colored-coins/views/landing.html';
-      views['main@'].controller = function($scope, $timeout, $log, profileService, storageService, go) {
+      views['main@'].controller = function($scope, $timeout, $log, profileService, storageService, applicationService) {
         storageService.getCopayDisclaimerFlag(function(err, val) {
-          if (val && profileService.profile) {
-            go.walletHome();
-          }
+          $scope.agreed = val;
+          $timeout(function() {
+            $scope.$digest();
+          }, 1);
         });
+
+        $scope.goHome = function() {
+          applicationService.restart();
+        };
 
         $scope.agreeAndCreate = function(noWallet) {
           storageService.setCopayDisclaimerFlag(function(err) {
@@ -26,6 +31,7 @@ angular.module('copayAddon.coloredCoins').config(function ($stateProvider) {
               $timeout(function() {
                 applicationService.restart();
               }, 1000);
+              return;
             }
 
             $scope.creatingProfile = true;

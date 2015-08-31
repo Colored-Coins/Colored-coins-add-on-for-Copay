@@ -3,9 +3,19 @@
         <a id="hamburger" class="p10" ng-show="!goBackToState && !closeToHome  && !index.noFocusedWallet"
            ng-click="index.openMenu()"><i class="fi-list size-24"></i>
         </a>
+        <a ng-show="goBackToState"
+           ng-click="$root.go(goBackToState); goBackToState = null"><i class="icon-arrow-left3 icon-back"></i>
+            <span class="text-back">{{'Back'|translate}}</span>
+        </a>
+
+        <a ng-show="closeToHome" class="p10 "
+           ng-click="topbar.goHome(); closeToHome = null">
+            <span class="text-close">{{'Close'|translate}}</span>
+        </a>
     </section>
 
-    <section class="right-small">
+
+    <section class="right-small" ng-hide="noControls">
         <a class="p10" ng-click="assets.openIssueModal()">
             <i class="icon-plus-circle size-24"></i>
         </a>

@@ -57,12 +57,17 @@ angular.module('copayAddon.coloredCoins').config(function ($stateProvider) {
     // replace both default 'splash' and 'disclaimer' states with a single one
     if (state.name == 'splash' || state.name == 'disclaimer') {
       views['main@'].templateUrl = 'colored-coins/views/landing.html';
-      views['main@'].controller = function($scope, $timeout, $log, profileService, storageService, go) {
+      views['main@'].controller = function($scope, $timeout, $log, profileService, storageService, applicationService) {
         storageService.getCopayDisclaimerFlag(function(err, val) {
-          if (val && profileService.profile) {
-            go.walletHome();
-          }
+          $scope.agreed = val;
+          $timeout(function() {
+            $scope.$digest();
+          }, 1);
         });
+
+        $scope.goHome = function() {
+          applicationService.restart();
+        };
 
         $scope.agreeAndCreate = function(noWallet) {
           storageService.setCopayDisclaimerFlag(function(err) {
@@ -71,6 +76,7 @@ angular.module('copayAddon.coloredCoins').config(function ($stateProvider) {
               $timeout(function() {
                 applicationService.restart();
               }, 1000);
+              return;
             }
 
             $scope.creatingProfile = true;
@@ -125,10 +131,10 @@ angular.module('copayAddon.coloredCoins').config(function ($provide) {
       }
     };
     directive.template = '' +
-        '<div class="cc-logo-holder" ng-class="{ \'negative\' : negative }">' +
-        '<img ng-src="{{ logo_url }}" alt="Copay" style="{{ copay_logo_style }}">' +
-        '<div class="cc-plus">+</div>' +
-        '<div class="cc-logo" style="{{ logo_style }}"></div>' +
+        '<div class="cc-logo-holder" ng-class="{ \'negative\' : negative, \'inline\' : width < 50, }">' +
+          '<img ng-src="{{ logo_url }}" alt="Copay" style="{{ copay_logo_style }}">' +
+          '<div class="cc-plus">+</div>' +
+          '<div class="cc-logo" style="{{ logo_style }}"></div>' +
         '</div>';
     return $delegate;
   });
@@ -1158,9 +1164,19 @@ angular.module("colored-coins/views/includes/topbar.html", []).run(["$templateCa
     "        <a id=\"hamburger\" class=\"p10\" ng-show=\"!goBackToState && !closeToHome  && !index.noFocusedWallet\"\n" +
     "           ng-click=\"index.openMenu()\"><i class=\"fi-list size-24\"></i>\n" +
     "        </a>\n" +
+    "        <a ng-show=\"goBackToState\"\n" +
+    "           ng-click=\"$root.go(goBackToState); goBackToState = null\"><i class=\"icon-arrow-left3 icon-back\"></i>\n" +
+    "            <span class=\"text-back\">{{'Back'|translate}}</span>\n" +
+    "        </a>\n" +
+    "\n" +
+    "        <a ng-show=\"closeToHome\" class=\"p10 \"\n" +
+    "           ng-click=\"topbar.goHome(); closeToHome = null\">\n" +
+    "            <span class=\"text-close\">{{'Close'|translate}}</span>\n" +
+    "        </a>\n" +
     "    </section>\n" +
     "\n" +
-    "    <section class=\"right-small\">\n" +
+    "\n" +
+    "    <section class=\"right-small\" ng-hide=\"noControls\">\n" +
     "        <a class=\"p10\" ng-click=\"assets.openIssueModal()\">\n" +
     "            <i class=\"icon-plus-circle size-24\"></i>\n" +
     "        </a>\n" +
@@ -1223,8 +1239,15 @@ angular.module("colored-coins/views/includes/transaction.html", []).run(["$templ
 
 angular.module("colored-coins/views/landing.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/landing.html",
-    "<div class=\"text-center cc-landing\" ng-if=\"!index.hasProfile\">\n" +
-    "    <div class=\"row\">\n" +
+    "<div\n" +
+    "        ng-if=\"agreed && index.hasProfile\"\n" +
+    "        class=\"topbar-container\"\n" +
+    "        ng-include=\"'colored-coins/views/includes/topbar.html'\"\n" +
+    "        ng-init=\"titleSection='Terms of Use';  goBackToState = 'about'; noColor = true; noControls = true\">\n" +
+    "</div>\n" +
+    "\n" +
+    "<div ng-class=\"{ 'cc-landing': !agreed }\">\n" +
+    "    <div class=\"row\" ng-show=\"!agreed\">\n" +
     "        <div class=\"medium-6 large-4 medium-centered small-centered large-centered columns m20t\">\n" +
     "            <logo negative=\"true\"></logo>\n" +
     "            <div class=\"p20\">\n" +
@@ -1248,9 +1271,14 @@ angular.module("colored-coins/views/landing.html", []).run(["$templateCache", fu
     "            <span translate>Creating Profile...</span>\n" +
     "        </div>\n" +
     "    </div>\n" +
-    "    <div class=\"gif-splash\">\n" +
-    "        <span class=\"text-bold text-gray\" translate>Terms of Use</span>\n" +
-    "        <div class=\"enable_text_select text-light text-left size-14 text-black cc-disclaimer\">\n" +
+    "    <div ng-class=\"{ 'disclaimer':!index.hasProfile, 'content': agreed }\">\n" +
+    "        <span class=\"text-bold text-gray\" ng-show=\"!agreed\" translate>Terms of Use</span>\n" +
+    "        <h4 class=\"title m0\" ng-show=\"agreed && !index.hasProfile\">\n" +
+    "            <span translate>Terms of Use</span>\n" +
+    "            <logo class=\"right\" width=\"40\" inline=\"true\"></logo>\n" +
+    "        </h4>\n" +
+    "        <div class=\"p10 m10 enable_text_select text-light text-left cc-disclaimer\"\n" +
+    "             ng-class=\"{ 'text-gray': agreed, 'text-black': !agreed }\">\n" +
     "            <p>The Copay Colored Coins wallet is meant for testing purposes and provided AS-IS.</p>\n" +
     "\n" +
     "            <p>USE AT YOUR OWN RISK.</p>\n" +
@@ -1259,12 +1287,15 @@ angular.module("colored-coins/views/landing.html", []).run(["$templateCache", fu
     "\n" +
     "            <p><b>Liability:</b> For no case and for no reason shall Colored Coins be held liable for any damage, direct or indirect, consequential, exemplary, physical or special, to You, any User or any 3rd party due to its misperformance of duties herein. Colored Coins provides the Software on an AS-IS basis and shall not be held liable, to the extent permitted by law, by any case of misconduct, negligence, gross negligence, malice or any other mean, to any damages or loss of property, including damages to: virtual property, reputation and business reputation, user account information including login information, loss of profit, loss of good name, all resulting from the use or inability to use Software rendered by Colored Coins.</p>\n" +
     "        </div>\n" +
-    "        <div class=\"columns start-button m10t\" ng-show=\"!creatingProfile\">\n" +
+    "        <div class=\"columns start-button m10t\" ng-show=\"!creatingProfile && !agreed\">\n" +
     "            <p class=\"text-light text-gray\" translate>I affirm that I have read, understood, and agree with these terms.</p>\n" +
     "            <button ng-click=\"agreeAndCreate()\" class=\"button black expand round size-12 text-spacing\" translate> OPEN WALLET </button>\n" +
     "            <p class=\"text-gray m5b size-12\" translate>Already have a wallet?</p>\n" +
     "            <button  ng-click=\"agreeAndCreate(true)\" class=\"button round outline dark-gray tiny\" translate>Import backup </button>\n" +
     "        </div>\n" +
+    "        <button ng-show=\"agreed && !index.hasProfile\" class=\"round expand\" ng-click=\"goHome()\" translate>\n" +
+    "            Go back\n" +
+    "        </button>\n" +
     "    </div>\n" +
     "</div>\n" +
     "");
