@@ -8,9 +8,11 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
   // UTXOs "cache"
   root.txidToUTXO = {};
   root.assets = null;
+  root.error = null;
 
   var disableFocusListener = $rootScope.$on('Local/NewFocusedWallet', function() {
     root.assets = null;
+    root.error = null;
   });
 
   var _setOngoingProcess = function(name) {
@@ -20,12 +22,17 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
     root.assets = null;
+    root.error = null;
+    $rootScope.$emit('ColoredCoins/Error', null);
     var addresses = lodash.pluck(balance.byAddress, 'address');
 
     _setOngoingProcess('Getting assets');
     _fetchAssets(addresses, function (err, assets) {
       if (err) {
-        $log.error(err.error || err.message);
+        var msg = err.error || err.message;
+        root.error = msg;
+        $rootScope.$emit('ColoredCoins/Error', msg);
+        $log.error(msg);
       } else {
         root.assets = assets;
         $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
@@ -44,7 +51,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     $log.debug('Body: ', JSON.stringify(data));
 
     if (status != 200 && status != 201) {
-      return cb(data);
+      return cb(data || { error: "Cannot connect to ColoredCoins API" });
     }
     return cb(null, data);
   };

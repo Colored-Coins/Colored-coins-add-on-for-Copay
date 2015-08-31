@@ -147,9 +147,14 @@ angular.module('copayAddon.coloredCoins')
       var self = this;
 
       this.assets = coloredCoins.assets;
+      this.error = coloredCoins.error;
 
       var disableAssetListener = $rootScope.$on('ColoredCoins/AssetsUpdated', function (event, assets) {
         self.assets = assets;
+      });
+
+      var disableErrorListener = $rootScope.$on('ColoredCoins/Error', function (event, errorMsg) {
+        self.error = errorMsg;
       });
 
       var disableOngoingProcessListener = $rootScope.$on('Addon/OngoingProcess', function(e, name) {
@@ -159,6 +164,7 @@ angular.module('copayAddon.coloredCoins')
       $scope.$on('$destroy', function () {
         disableAssetListener();
         disableOngoingProcessListener();
+        disableErrorListener();
       });
 
       this.setOngoingProcess = function(name) {
@@ -649,9 +655,11 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
   // UTXOs "cache"
   root.txidToUTXO = {};
   root.assets = null;
+  root.error = null;
 
   var disableFocusListener = $rootScope.$on('Local/NewFocusedWallet', function() {
     root.assets = null;
+    root.error = null;
   });
 
   var _setOngoingProcess = function(name) {
@@ -661,12 +669,17 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
 
   var disableBalanceListener = $rootScope.$on('Local/BalanceUpdated', function (event, balance) {
     root.assets = null;
+    root.error = null;
+    $rootScope.$emit('ColoredCoins/Error', null);
     var addresses = lodash.pluck(balance.byAddress, 'address');
 
     _setOngoingProcess('Getting assets');
     _fetchAssets(addresses, function (err, assets) {
       if (err) {
-        $log.error(err.error || err.message);
+        var msg = err.error || err.message;
+        root.error = msg;
+        $rootScope.$emit('ColoredCoins/Error', msg);
+        $log.error(msg);
       } else {
         root.assets = assets;
         $rootScope.$emit('ColoredCoins/AssetsUpdated', assets);
@@ -685,7 +698,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
     $log.debug('Body: ', JSON.stringify(data));
 
     if (status != 200 && status != 201) {
-      return cb(data);
+      return cb(data || { error: "Cannot connect to ColoredCoins API" });
     }
     return cb(null, data);
   };
@@ -1098,10 +1111,14 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "                </div>\n" +
     "            </div>\n" +
     "        </div>\n" +
+    "        <div class=\"cc-api-error\" ng-show=\"assets.error\">\n" +
+    "            <h3 translate>Error connecting to ColoredCoins</h3>\n" +
+    "            <span class=\"nb\">{{ assets.error }}</span>\n" +
+    "        </div>\n" +
     "        <div class=\"cc-no-assets\" ng-show=\"assets.assets && assets.assets.length == 0\">\n" +
-    "            <h3>You don't have any assets.</h3>\n" +
+    "            <h3 translate>You don't have any assets.</h3>\n" +
     "            <div>Click <a ng-click=\"assets.openIssueModal()\">here</a> to issue you first!</div>\n" +
-    "            <span class=\"nb\">(This requires some Bitcoins for the miner fee)</span>\n" +
+    "            <span class=\"nb\">(<span translate>This requires some Bitcoins for the miner fee</span>)</span>\n" +
     "        </div>\n" +
     "    </div>\n" +
     "</div>\n" +

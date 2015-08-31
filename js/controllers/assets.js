@@ -5,9 +5,14 @@ angular.module('copayAddon.coloredCoins')
       var self = this;
 
       this.assets = coloredCoins.assets;
+      this.error = coloredCoins.error;
 
       var disableAssetListener = $rootScope.$on('ColoredCoins/AssetsUpdated', function (event, assets) {
         self.assets = assets;
+      });
+
+      var disableErrorListener = $rootScope.$on('ColoredCoins/Error', function (event, errorMsg) {
+        self.error = errorMsg;
       });
 
       var disableOngoingProcessListener = $rootScope.$on('Addon/OngoingProcess', function(e, name) {
@@ -17,6 +22,7 @@ angular.module('copayAddon.coloredCoins')
       $scope.$on('$destroy', function () {
         disableAssetListener();
         disableOngoingProcessListener();
+        disableErrorListener();
       });
 
       this.setOngoingProcess = function(name) {
