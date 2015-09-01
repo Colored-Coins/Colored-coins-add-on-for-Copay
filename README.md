@@ -2,6 +2,14 @@
 
 ## Installation
 
+This addon requires extra features from Copay and BWS to be supported. Some of these features [aren't pulled yet in Copay and BWS master branches](https://github.com/Colored-Coins/Colored-coins-add-on-for-Copay/blob/master/STATUS.md), so you have to use custom Copay and BWS.
+
+0. Install Copay and BWS from the following code trees:
+    
+    Copay: https://github.com/troggy/copay/tree/wip
+
+    Bitcore Wallet Service: https://github.com/troggy/bitcore-wallet-service/tree/wip
+
 1. In Copay instance folder:
 
     ````
