@@ -45,6 +45,30 @@ module
     });
 'use strict';
 
+angular.module('copayAddon.coloredCoins').config(function ($provide) {
+
+  $provide.decorator('availableBalanceDirective', function($delegate) {
+    var directive = $delegate[0];
+    directive.controller = function($rootScope, $scope, profileService, configService, lodash) {
+      var config = configService.getSync().wallet.settings;
+      $rootScope.$on('ColoredCoins/AssetsUpdated', function(event, assets) {
+        var coloredBalanceSat = lodash.reduce(assets, function(total, asset) {
+          total += asset.utxo.value;
+          return total;
+        }, 0);
+
+        var availableBalanceSat = $scope.index.availableBalanceSat - coloredBalanceSat;
+        $scope.availableBalanceStr = profileService.formatAmount(availableBalanceSat) + ' ' + config.unitName;
+        $scope.coloredBalanceStr = profileService.formatAmount(coloredBalanceSat) + ' ' + config.unitName;
+      });
+    };
+    directive.templateUrl = 'colored-coins/views/includes/available-balance.html';
+    return $delegate;
+  });
+
+});
+'use strict';
+
 /*
   Replace Copay's splash and disclaimer screens with single landing page
  */
@@ -1036,7 +1060,7 @@ angular.module('copayAddon.coloredCoins')
       }
     });
 
-angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/asset-status.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/includes/transaction.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/issue-status.html', 'colored-coins/views/modals/issue.html', 'colored-coins/views/modals/send.html', 'colored-coins/views/modals/transfer-status.html']);
+angular.module('copayAssetViewTemplates', ['colored-coins/views/assets.html', 'colored-coins/views/includes/asset-status.html', 'colored-coins/views/includes/available-balance.html', 'colored-coins/views/includes/topbar.html', 'colored-coins/views/includes/transaction.html', 'colored-coins/views/landing.html', 'colored-coins/views/modals/asset-details.html', 'colored-coins/views/modals/issue-status.html', 'colored-coins/views/modals/issue.html', 'colored-coins/views/modals/send.html', 'colored-coins/views/modals/transfer-status.html']);
 
 angular.module("colored-coins/views/assets.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("colored-coins/views/assets.html",
@@ -1178,6 +1202,30 @@ angular.module("colored-coins/views/includes/asset-status.html", []).run(["$temp
     "    </div>\n" +
     "    <div class=\"text-center\">\n" +
     "        <a class=\"button outline light-gray round tiny small-4\" ng-click=\"cancel()\" translate>OKAY</a>\n" +
+    "    </div>\n" +
+    "</div>\n" +
+    "");
+}]);
+
+angular.module("colored-coins/views/includes/available-balance.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("colored-coins/views/includes/available-balance.html",
+    "<div>\n" +
+    "    <div class=\"left\" ng-show=\"index.lockedBalanceSat\">\n" +
+    "        <i class=\"fi-info size-24 m10r\"></i>\n" +
+    "    </div>\n" +
+    "    <div class=\"size-10\">\n" +
+    "              <span class=\"db text-bold\">\n" +
+    "                <span translate>Available Balance</span>:\n" +
+    "                {{ availableBalanceStr }}\n" +
+    "              </span>\n" +
+    "              <span class=\"db text-gray\" ng-show=\"index.lockedBalanceSat\">\n" +
+    "                {{ index.lockedBalanceStr }}\n" +
+    "                <span translate>locked by pending payments</span>\n" +
+    "              </span>\n" +
+    "              <span class=\"text-gray\" ng-show=\"coloredBalanceStr\">\n" +
+    "                {{ coloredBalanceStr }}\n" +
+    "                <span translate>are used to hold assets</span>\n" +
+    "              </span>\n" +
     "    </div>\n" +
     "</div>\n" +
     "");
