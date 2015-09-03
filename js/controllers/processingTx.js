@@ -15,10 +15,6 @@ function ProcessingTxController($rootScope, $scope, $timeout, $log, coloredCoins
   this.txStatus = txStatus;
   this.$modalInstance = $modalInstance;
 
-  this.txStatusOpts = {
-    templateUrl: 'colored-coins/views/modals/transfer-status.html'
-  };
-
   var self = this;
 
   $scope.error = '';
@@ -140,7 +136,7 @@ ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, to
             self.$scope.$digest();
           }, 1);
         } else {
-          self.txStatus.notify(tx, self.txStatusOpts, function () {
+          self.txStatus.notify(tx, function () {
             self.$scope.$emit('Local/TxProposalAction', true);
           });
         }

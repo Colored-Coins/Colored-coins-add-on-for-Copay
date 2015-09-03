@@ -14,10 +14,6 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   $scope.estimatedCost = '...';
 
-  this.txStatusOpts = {
-    templateUrl: 'colored-coins/views/modals/issue-status.html'
-  };
-
   ccFeeService.estimateCostOfIssuance(function(err, fee, totalCost) {
     if (err) {
       return self._handleError(err);

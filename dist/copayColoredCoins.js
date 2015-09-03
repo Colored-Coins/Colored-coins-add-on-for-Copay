@@ -142,6 +142,23 @@ angular.module('copayAddon.coloredCoins').config(function ($provide) {
 });
 'use strict';
 
+angular.module('copayAddon.coloredCoins').config(function ($provide) {
+
+  $provide.decorator('txStatus', function($delegate) {
+    var defaultTemplateUrl = $delegate._templateUrl;
+    $delegate._templateUrl = function(type, txp) {
+      if (txp.customData && txp.customData.asset) {
+        return txp.customData.asset.action == 'transfer'
+            ? 'colored-coins/views/modals/transfer-status.html'
+            : 'colored-coins/views/modals/issue-status.html';
+      }
+      return defaultTemplateUrl(type, txp);
+    };
+    return $delegate;
+  });
+});
+'use strict';
+
 angular.module('copayAddon.coloredCoins')
     .controller('assetsController', function ($rootScope, $scope, $timeout, $modal, isCordova, coloredCoins) {
       var self = this;
@@ -264,10 +281,6 @@ var AssetIssueController = function ($rootScope, $scope, $modalInstance, $timeou
 
   $scope.estimatedCost = '...';
 
-  this.txStatusOpts = {
-    templateUrl: 'colored-coins/views/modals/issue-status.html'
-  };
-
   ccFeeService.estimateCostOfIssuance(function(err, fee, totalCost) {
     if (err) {
       return self._handleError(err);
@@ -368,10 +381,6 @@ function ProcessingTxController($rootScope, $scope, $timeout, $log, coloredCoins
   this.$timeout = $timeout;
   this.txStatus = txStatus;
   this.$modalInstance = $modalInstance;
-
-  this.txStatusOpts = {
-    templateUrl: 'colored-coins/views/modals/transfer-status.html'
-  };
 
   var self = this;
 
@@ -494,7 +503,7 @@ ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, to
             self.$scope.$digest();
           }, 1);
         } else {
-          self.txStatus.notify(tx, self.txStatusOpts, function () {
+          self.txStatus.notify(tx, function () {
             self.$scope.$emit('Local/TxProposalAction', true);
           });
         }
