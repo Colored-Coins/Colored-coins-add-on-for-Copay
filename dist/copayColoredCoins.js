@@ -1090,16 +1090,16 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "\n" +
     "    <div class=\"topbar-container\" ng-include=\"'colored-coins/views/includes/topbar.html'\"></div>\n" +
     "    <div class=\"cc-assets-list-view\">\n" +
-    "        <div class=\"cc-assets-list\" ng-show=\"assets.assets\">\n" +
+    "        <div class=\"cc-assets-list\" ng-show=\"assets.assets && !$root.updatingBalance\">\n" +
     "            <div ng-repeat=\"asset in assets.assets | orderBy:['assetName', 'utxo.txid']\" ng-click=\"assets.openAssetModal(asset)\"\n" +
     "                 class=\"row collapse cc-assets-list-item\">\n" +
-    "                <div class=\"small-1 columns text-center\">\n" +
+    "                <div class=\"columns cc-asset-icon-column text-center\">\n" +
     "                    <img ng-src=\"{{ asset.icon }}\" class=\"asset-icon icon\" ng-show=\"asset.icon\"/>\n" +
     "                    <img class=\"asset-icon icon cc-default-icon\" ng-hide=\"asset.icon\"/>\n" +
     "                    &nbsp;\n" +
     "                </div>\n" +
-    "                <div class=\"small-4 columns\">\n" +
-    "                    <div ng-if=\"!$root.updatingBalance\">\n" +
+    "                <div class=\"columns cc-asset-name-column\">\n" +
+    "                    <div>\n" +
     "                        <span class=\"text-bold size-16\">{{ asset.metadata.assetName }}</span>\n" +
     "                    </div>\n" +
     "                    <div class=\"ellipsis text-gray size-14\">\n" +
@@ -1112,7 +1112,7 @@ angular.module("colored-coins/views/assets.html", []).run(["$templateCache", fun
     "                    <i class=\"fi-lock\" ng-show=\"asset.locked\"></i>\n" +
     "                  </span>\n" +
     "                </div>\n" +
-    "                <div class=\"small-4 columns\">\n" +
+    "                <div class=\"small-3 columns hide-for-small\">\n" +
     "                    <span class=\"size-14\"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>\n" +
     "                </div>\n" +
     "                <div class=\"small-1 columns text-right\">\n" +

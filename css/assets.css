@@ -207,3 +207,20 @@
     }
 }
 
+.cc-asset-icon-column {
+    width: 16.66667%; /* small-2 */
+}
+
+.cc-asset-name-column {
+    width: 58.33333%; /* small-7 */
+}
+
+@media only screen and (min-width: 40.0625em) {
+    .cc-asset-icon-column {
+        width: 8.33333%; /* small-1 */
+    }
+
+    .cc-asset-name-column {
+        width: 41.66667%; /* small-5 */
+    }
+}

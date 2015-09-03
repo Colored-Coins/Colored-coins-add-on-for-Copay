@@ -48,16 +48,16 @@
 
     <div class="topbar-container" ng-include="'colored-coins/views/includes/topbar.html'"></div>
     <div class="cc-assets-list-view">
-        <div class="cc-assets-list" ng-show="assets.assets">
+        <div class="cc-assets-list" ng-show="assets.assets && !$root.updatingBalance">
             <div ng-repeat="asset in assets.assets | orderBy:['assetName', 'utxo.txid']" ng-click="assets.openAssetModal(asset)"
                  class="row collapse cc-assets-list-item">
-                <div class="small-1 columns text-center">
+                <div class="columns cc-asset-icon-column text-center">
                     <img ng-src="{{ asset.icon }}" class="asset-icon icon" ng-show="asset.icon"/>
                     <img class="asset-icon icon cc-default-icon" ng-hide="asset.icon"/>
                     &nbsp;
                 </div>
-                <div class="small-4 columns">
-                    <div ng-if="!$root.updatingBalance">
+                <div class="columns cc-asset-name-column">
+                    <div>
                         <span class="text-bold size-16">{{ asset.metadata.assetName }}</span>
                     </div>
                     <div class="ellipsis text-gray size-14">
@@ -70,7 +70,7 @@
                     <i class="fi-lock" ng-show="asset.locked"></i>
                   </span>
                 </div>
-                <div class="small-4 columns">
+                <div class="small-3 columns hide-for-small">
                     <span class="size-14"><span translate>Issued by</span>: {{ asset.metadata.issuer }}</span>
                 </div>
                 <div class="small-1 columns text-right">
