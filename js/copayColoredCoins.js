@@ -12,6 +12,9 @@ module
               'main': {
                 templateUrl: 'colored-coins/views/assets.html'
               }
+            },
+            onEnter: function($rootScope){
+              $rootScope.$emit('Local/SetTab', 'assets', false);
             }
           });
     })
