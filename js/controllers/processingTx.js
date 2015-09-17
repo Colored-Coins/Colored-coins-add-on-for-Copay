@@ -137,7 +137,7 @@ ProcessingTxController.prototype._createAndExecuteProposal = function (txHex, to
           }, 1);
         } else {
           self.txStatus.notify(tx, function () {
-            self.$scope.$emit('Local/TxProposalAction', true);
+            self.$scope.$emit('Local/TxProposalAction');
           });
         }
         self.$scope.cancel();
