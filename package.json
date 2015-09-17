@@ -9,12 +9,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/troggy/copay-colored-coins-plugin.git"
+    "url": "git://github.com/Colored-Coins/Colored-coins-add-on-for-Copay.git"
   },
-  "homepage": "https://github.com/troggy/copay-colored-coins-plugin",
+  "homepage": "http://coloredcoins.org/colored-coins-copay-addon/",
   "author": "Kosta Korenkov <7r0ggy@gmail.com>",
   "bugs": {
-    "url": "https://github.com/troggy/copay-colored-coins-plugin/issues"
+    "url": "https://github.com/Colored-Coins/Colored-coins-add-on-for-Copay/issues"
   },
   "ignore": [
     "**/.*",
