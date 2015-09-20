@@ -199,6 +199,14 @@
     font-size: 0.8em;
 }
 
+.cc-inline-switch {
+    margin-bottom: 1.5rem !important;
+}
+
+.cc-inline-switch label {
+    line-height: 2rem;
+}
+
 /* ios safari */
 @media screen and (max-device-width: 480px) {
     .extra-margin-bottom {

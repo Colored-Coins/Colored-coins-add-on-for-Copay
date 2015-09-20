@@ -984,7 +984,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
           fee: fee,
           divisibility: 0,
           amount: issuance.amount,
-          reissueable: false,
+          reissueable: issuance.reissuable || false,
           transfer: [{
             'address': financeUtxo.address,
             'amount': issuance.amount
@@ -1640,6 +1640,14 @@ angular.module("colored-coins/views/modals/issue.html", []).run(["$templateCache
     "                        <input type=\"text\" id=\"description\" name=\"description\" ng-disabled=\"home.blockUx\"\n" +
     "                               ng-attr-placeholder=\"{{'Description' | translate}}\" ng-model=\"issuance.description\"\n" +
     "                               ng-focus=\"home.formFocus('description')\" ng-blur=\"home.formFocus(false)\">\n" +
+    "                    </div>\n" +
+    "                </div>\n" +
+    "                <div>\n" +
+    "                    <div class=\"row collapse cc-inline-switch\">\n" +
+    "                        <label for=\"is-reissuable\" class=\"left\">\n" +
+    "                            <span translate>Reissuable</span>\n" +
+    "                        </label>\n" +
+    "                        <switch id=\"is-reissuable\" name=\"reissuable\" ng-model=\"issuance.reissuable\" class=\"green right\"></switch>\n" +
     "                    </div>\n" +
     "                </div>\n" +
     "\n" +

@@ -301,7 +301,7 @@ function ColoredCoins($rootScope, profileService, ccConfig, ccFeeService, bitcor
           fee: fee,
           divisibility: 0,
           amount: issuance.amount,
-          reissueable: false,
+          reissueable: issuance.reissuable || false,
           transfer: [{
             'address': financeUtxo.address,
             'amount': issuance.amount

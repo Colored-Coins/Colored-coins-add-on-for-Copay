@@ -97,6 +97,14 @@
                                ng-focus="home.formFocus('description')" ng-blur="home.formFocus(false)">
                     </div>
                 </div>
+                <div>
+                    <div class="row collapse cc-inline-switch">
+                        <label for="is-reissuable" class="left">
+                            <span translate>Reissuable</span>
+                        </label>
+                        <switch id="is-reissuable" name="reissuable" ng-model="issuance.reissuable" class="green right"></switch>
+                    </div>
+                </div>
 
                 <h4 class="title" translate>Metadata</h4>
                 <div>
