@@ -3,7 +3,7 @@
 ### Copay
 - ~~Allow addons to use custom template for proposal row on home screen. [#3076](https://github.com/bitpay/copay/pull/3076)~~
 - ~~Allow addon menu items to run arbitrary code on click [#3069](https://github.com/bitpay/copay/pull/3069)~~
-- Allow addon menu items to run arbitrary code on click [#3153](https://github.com/bitpay/copay/pull/3153)
+- ~~Allow addon menu items to run arbitrary code on click [#3153](https://github.com/bitpay/copay/pull/3153)~~
 
 ### bitcore-wallet-service
   - Add EXTERNAL proposal type [#330](https://github.com/bitpay/bitcore-wallet-service/pull/330)
