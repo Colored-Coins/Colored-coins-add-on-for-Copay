@@ -13,7 +13,7 @@ This addon requires extra features from Copay and BWS to be supported. Some of t
 1. In Copay instance folder:
 
     ````
-    bower install https://github.com/troggy/copay-colored-coins-plugin.git
+    bower install https://github.com/Colored-Coins/Colored-coins-add-on-for-Copay
     ````
 
 2. Add ``copayAddon.coloredCoins`` module to as dependency of ``copayApp.addons`` module:
@@ -27,28 +27,28 @@ This addon requires extra features from Copay and BWS to be supported. Some of t
     Add the following under ``concat.angular.src``:
 
     ````
-    'bower_components/copay-colored-coins-plugin/dist/copayColoredCoins.js',
-    'bower_components/copay-colored-coins-plugin/config.js'
+    'bower_components/Colored-coins-add-on-for-Copay/dist/copayColoredCoins.js',
+    'bower_components/Colored-coins-add-on-for-Copay/config.js'
     ````
     
     And under ``concat.foundation.src``:
     
     ````
-    'bower_components/copay-colored-coins-plugin/css/assets.css'
+    'bower_components/Colored-coins-add-on-for-Copay/css/assets.css'
     ````
 4. If you are installing this addon on public Copay (in other words, not for development purposes), change
-``bower_components/copay-colored-coins-plugin/config.js`` so that it has your copay's host name intead of ``localhost``.
+``bower_components/Colored-coins-add-on-for-Copay/config.js`` so that it has your copay's host name intead of ``localhost``.
 You need to have ports 8000, 8100, 8200 to be open for incoming connections for that host.
 
 5. Addon uses S3 bucket to store uploaded asset icons. Configuration:
    - [Configure AWS profile](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html). It should have ``PutObject`` permission on you bucket.
-   - Change profile, bucket and region names in ``bower_components/copay-colored-coins-plugin/Procfile``
+   - Change profile, bucket and region names in ``bower_components/Colored-coins-add-on-for-Copay/Procfile``
 6. Run services
 
    For development: run with [foreman](http://ddollar.github.io/foreman/):
    
     ````
-    foreman start -f bower_components/copay-colored-coins-plugin/Procfile
+    foreman start -f bower_components/Colored-coins-add-on-for-Copay/Procfile
     ````
 
    In production: [export to Upstart](http://ddollar.github.io/foreman/#EXPORTING)
