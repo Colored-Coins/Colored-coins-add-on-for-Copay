@@ -21,7 +21,7 @@ This addon requires extra features from Copay and BWS to be supported. Some of t
 1. In Copay instance folder execute the following. This will install addon and it's dependencies:
 
     ````
-    bower install https://github.com/Colored-Coins/Colored-coins-add-on-for-Copay.git && cd bower_components/copay-colored-coins-plugin && npm i && cd -
+    bower install Colored-Coins/Colored-coins-add-on-for-Copay && cd bower_components/copay-colored-coins-plugin && npm i && cd -
     ````
 
 2. Add ``copayAddon.coloredCoins`` module to as dependency of ``copayApp.addons`` module (in ``copay/src/js/app.js``):
