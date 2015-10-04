@@ -2,7 +2,7 @@
 
 ## Installation
 
-This addon requires extra features from Copay and BWS to be supported. Some of these features [aren't pulled yet in Copay and BWS master branches](https://github.com/Colored-Coins/Colored-coins-add-on-for-Copay/blob/master/STATUS.md), so you have to use custom Copay and BWS.
+This addon requires extra features from Copay and BWS to be supported. Some of these features [aren't pulled yet in Copay and BWS master branches](https://github.com/Colored-Coins/Colored-coins-add-on-for-Copay/blob/master/STATUS.md), so you have to use custom Copay and BWS. For you convenience you can use pre-prepared Copay version from [here](https://github.com/troggy/copay/tree/colored) and skip steps 1 to 6 (except BWS part of step 1)
 
 0. Install Copay and BWS from the following code trees:
     
