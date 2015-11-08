@@ -1,7 +1,7 @@
 {
-  "name": "copay-colored-coins-plugin",
-  "version": "1.2.0",
-  "description": "Copay addon with support for Colored Coins",
+  "name": "colored-coins-copay-addon",
+  "version": "1.2.1",
+  "description": "Colored Coins support for Copay wallet",
   "main": "js/copayColoredCoins.js",
   "scripts": {
     "start": "node server/apiProxy.js",

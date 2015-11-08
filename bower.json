@@ -1,12 +1,15 @@
 {
-  "name": "copay-colored-coins-plugin",
-  "version": "1.2.0",
+  "name": "colored-coins-copay-addon",
+  "version": "1.2.1",
   "homepage": "http://coloredcoins.org/colored-coins-copay-addon/",
   "authors": [
     "Kosta Korenkov <7r0ggy@gmail.com>"
   ],
   "description": "Colored Coins support for Copay wallet",
-  "main": "dist/copayColoredCoins.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Colored-Coins/Colored-coins-add-on-for-Copay.git"
+  },
   "keywords": [
     "copay",
     "wallet",
