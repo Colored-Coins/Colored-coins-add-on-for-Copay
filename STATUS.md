@@ -9,8 +9,8 @@
   - Add EXTERNAL proposal type [#330](https://github.com/bitpay/bitcore-wallet-service/pull/330)
   
 ### bitcore-wallet-utils
- - Fix buildTx for MULTIPLEOUTPUTS proposal without change [#28](https://github.com/bitpay/bitcore-wallet-utils/pull/28)
- - Allow both toAddress and script for same output [#34](https://github.com/bitpay/bitcore-wallet-utils/pull/34)
+ - ~~Fix buildTx for MULTIPLEOUTPUTS proposal without change [#28](https://github.com/bitpay/bitcore-wallet-utils/pull/28)~~
+ - ~~Allow both toAddress and script for same output [#34](https://github.com/bitpay/bitcore-wallet-utils/pull/34)~~
 
 ### bitcore-wallet-client
 - https://github.com/troggy/bitcore-wallet-client/tree/txp/send-inputs
