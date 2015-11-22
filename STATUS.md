@@ -6,7 +6,7 @@
 - ~~Allow addon menu items to run arbitrary code on click [#3153](https://github.com/bitpay/copay/pull/3153)~~
 
 ### bitcore-wallet-service
-  - Add EXTERNAL proposal type [#330](https://github.com/bitpay/bitcore-wallet-service/pull/330)
+  - ~~Add EXTERNAL proposal type [#330](https://github.com/bitpay/bitcore-wallet-service/pull/330)~~
   
 ### bitcore-wallet-utils
  - ~~Fix buildTx for MULTIPLEOUTPUTS proposal without change [#28](https://github.com/bitpay/bitcore-wallet-utils/pull/28)~~
