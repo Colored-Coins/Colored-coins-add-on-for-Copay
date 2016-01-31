@@ -2,23 +2,29 @@
 
 ## Installation
 
-This addon requires extra features from Copay and BWS to be supported. Some of these features [aren't pulled yet in Copay and BWS master branches](https://github.com/Colored-Coins/Colored-coins-add-on-for-Copay/blob/master/STATUS.md), so you have to use custom Copay and BWS. For your convenience you can use prepared Copay version from [here](https://github.com/troggy/copay/tree/colored) and skip steps 1 to 6 (except BWS part of step 1)
+### Quick install
 
-0. Install Copay and BWS from the following code trees:
+The following will setup Copay 1.2.0 with this addon installed:
+````
+git clone -b colored https://github.com/troggy/copay
+cd copay
+npm run setup
+grunt prod
+````
+
+Run with [foreman](https://www.npmjs.com/package/foreman):
+````
+nf start
+````
+
+
+### Manual installation
+
+Setup addon from scratch on top of Copay 1.2.0 (won't work for latest version of Copay)
+
+0. Install [Copay 1.2.0](https://github.com/bitpay/copay):
     
-    Copay: https://github.com/troggy/copay/tree/wip
-
-    ````
-    git clone -b wip https://github.com/troggy/copay && cd copay && bower i && npm i && cd -
-    ````
-
-    Bitcore Wallet Service: https://github.com/troggy/bitcore-wallet-service/tree/wip
-    
-    ````
-    git clone -b wip https://github.com/troggy/bitcore-wallet-service && cd bitcore-wallet-service && npm install && cd -
-    ````
-
-1. In Copay instance folder execute the following. This will install addon and it's dependencies:
+1. Install addon and it's dependencies inside Copay folder:
 
     ````
     bower install colored-coins-copay-addon && cd bower_components/colored-coins-copay-addon && npm i && cd -
@@ -30,26 +36,6 @@ This addon requires extra features from Copay and BWS to be supported. Some of t
      angular.module('copayApp.addons', ['copayAddon.coloredCoins']);
      ````
      
-2. Set up your Copay to use local BWS. In ``copay/src/js/services/configService.js``:
-
-    Change
-    ````
-    // Bitcore wallet service URL
-    bws: {
-      url: 'https://bws.bitpay.com/bws/api',
-    },
-    ````
-    
-    to
-    
-    ````
-    // Bitcore wallet service URL
-    bws: {
-      url: 'http://localhost:3232/bws/api',
-    },
-    ````
-
-
 3. Update Copay's Gruntfile (``copay/Grunfile.js``).
     
     Add the following under ``concat.angular.src``:
@@ -79,22 +65,12 @@ You need to have ports 8000, 8100, 8200 to be open for incoming connections for 
     grunt
     ````
     
-6. Run services
-
-   For development: run with [foreman](http://ddollar.github.io/foreman/):
+6. Run services with [ff](https://www.npmjs.com/package/foreman):
    
     ````
     foreman start -f bower_components/colored-coins-copay-addon/Procfile
     ````
 
-   In production: [export to Upstart](http://ddollar.github.io/foreman/#EXPORTING)
-
-7. Start bitcore-wallet-service. In ``bitcore-wallet-service`` folder:
-    
-    ````
-    npm start
-    ````
-   
 8. Start Copay. In ``copay`` folder:
 
     ````
