@@ -12,6 +12,8 @@ npm run setup
 grunt prod
 ````
 
+(optional) [Setup AWS S3 bucket](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html) if you want to upload icons to assets. Change profile, bucket and region names in ``bower_components/colored-coins-copay-addon/Procfile``
+
 Run with [foreman](https://www.npmjs.com/package/foreman):
 ````
 nf start
