@@ -1,3 +1,9 @@
+# DEPRECATED
+
+This wsa created for older Copay 1.8.0 which is not supported anymore. Please use https://github.com/Colored-Coins/colored-coins-copay-wallet instead.
+
+----
+
 [Copay](https://github.com/bitpay/copay) addon with support for [Colored Coins](http://coloredcoins.org).
 
 ## Installation
